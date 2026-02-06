@@ -1,0 +1,35 @@
+{
+  "name": "cash-io",
+  "version": "1.0.0",
+  "description": "Multi-chain ZK-privacy dApp with Account Abstraction and AI agents",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "concurrently \"npm:dev:*\"",
+    "dev:contracts": "npm run dev -w @cash-io/contracts --if-present",
+    "dev:agents": "npm run dev -w @cash-io/agents --if-present",
+    "dev:relayer": "npm run dev -w @cash-io/relayer --if-present",
+    "dev:sdk": "npm run dev -w @cash-io/sdk --if-present",
+    "dev:blob-storage": "npm run dev -w @cash-io/blob-storage --if-present",
+    "dev:web": "npm run dev -w @cash-io/web --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
+    "compile:contracts": "npm run compile -w @cash-io/contracts",
+    "compile:circuits": "npm run compile -w @cash-io/circuits",
+    "deploy:local": "npm run deploy:local -w @cash-io/contracts",
+    "deploy:subnet": "npm run deploy:subnet -w @cash-io/contracts",
+    "setup:circuits": "npm run setup -w @cash-io/circuits"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

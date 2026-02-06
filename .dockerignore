@@ -1,0 +1,13 @@
+node_modules
+dist
+build
+out
+.vite
+.cache
+.git
+.env
+.env.*
+.vscode
+Dockerfile
+docker-compose.yml
+*.log

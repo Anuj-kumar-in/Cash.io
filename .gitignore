@@ -1,0 +1,69 @@
+# Node
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+
+# Build outputs
+dist/
+build/
+out/
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# Dependency directories
+.pnpm-store/
+
+# ESM build caches
+.cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# npm/yarn lockfiles (optional: uncomment if you don't commit lockfiles)
+# package-lock.json
+# yarn.lock
+
+# ESLint cache
+.eslintcache
+
+# Hardhat / Solidity artifacts
+artifacts/
+cache/
+typechain/
+typechain-types/
+
+# Misc
+*.tgz
+tmp/
+temp/

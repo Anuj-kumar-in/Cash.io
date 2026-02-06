@@ -1,0 +1,32 @@
+{
+  "name": "@cash-io/sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for Cash.io protocol",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "ethers": "^6.10.0",
+    "snarkjs": "^0.7.3",
+    "poseidon-lite": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/snarkjs": "^0.7.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  }
+}
+
