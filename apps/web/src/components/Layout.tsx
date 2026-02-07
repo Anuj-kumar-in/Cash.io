@@ -16,11 +16,11 @@ import { useSDK } from '../hooks/useSDK';
 import { getChainById } from '../config/chains';
 
 const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Shield', href: '/shield', icon: Shield },
-    { name: 'Transfer', href: '/transfer', icon: ArrowLeftRight },
-    { name: 'Bridge', href: '/bridge', icon: Globe },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { name: 'Dashboard', href: '/app', icon: LayoutDashboard },
+    { name: 'Shield', href: '/app/shield', icon: Shield },
+    { name: 'Transfer', href: '/app/transfer', icon: ArrowLeftRight },
+    { name: 'Bridge', href: '/app/bridge', icon: Globe },
+    { name: 'Settings', href: '/app/settings', icon: Settings },
 ];
 
 export default function Layout() {

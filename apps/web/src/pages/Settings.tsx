@@ -203,7 +203,7 @@ export default function Settings() {
                             <span className="text-sm text-[var(--color-muted)]">Public Balance</span>
                             <div className="flex items-baseline gap-2 mt-1">
                                 <span className="text-xl font-bold">
-                                    {balance ? parseFloat(balance.formatted).toFixed(4) : '0.0000'}
+                                    {balance ? (Number(balance.value) / Math.pow(10, balance.decimals)).toFixed(4) : '0.0000'}
                                 </span>
                                 <span className="text-sm text-[var(--color-muted)]">{balance?.symbol || 'ETH'}</span>
                             </div>

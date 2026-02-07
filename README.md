@@ -86,6 +86,12 @@ Cash.io is a cutting-edge decentralized application that provides **zero-fee**, 
 - **Sharded Retrieval** - Efficient proof input serving
 - **Indexing Layer** - Commitment tree reconstruction
 
+### 6. **IPFS Storage (Decentralized)**
+- **Recovery Key Backup** - Encrypted recovery keys stored on IPFS
+- **Pinata Integration** - Reliable IPFS pinning service
+- **Password Encryption** - AES-GCM-256 encryption for sensitive data
+- **Gateway Fallback** - Multiple IPFS gateway support
+
 ## 📁 Project Structure
 
 ```
@@ -147,7 +153,8 @@ Cash.io/
 │       │   ├── client/          # Main SDK client
 │       │   ├── aa/              # Account abstraction helpers
 │       │   ├── zk/              # ZK proof generation
-│       │   └── bridges/         # Bridge interaction
+│       │   ├── bridges/         # Bridge interaction
+│       │   └── ipfs/            # IPFS storage integration
 │       └── package.json
 │
 ├── apps/
@@ -178,6 +185,96 @@ npm run build
 
 # Start local development
 npm run dev
+```
+
+## 🌐 IPFS Integration
+
+The SDK provides built-in IPFS support for decentralized storage of recovery keys and other data.
+
+### Environment Variables
+
+Add the following to your `.env` file (or `.env.local` for frontend):
+
+```bash
+# Frontend (Vite) - use VITE_ prefix
+VITE_IPFS_GATEWAY_URL=https://gateway.pinata.cloud
+VITE_IPFS_API_URL=https://api.pinata.cloud
+VITE_IPFS_JWT=your-pinata-jwt-token
+
+# Backend/Node.js
+IPFS_GATEWAY_URL=https://gateway.pinata.cloud
+IPFS_API_URL=https://api.pinata.cloud
+IPFS_JWT=your-pinata-jwt-token
+```
+
+### Usage in Frontend
+
+```typescript
+import { 
+  CashioClient, 
+  IPFSClient, 
+  ipfsClient,
+  RecoveryKeyUtils 
+} from '@cash-io/sdk';
+
+// Option 1: Create IPFS client from environment variables
+const ipfs = ipfsClient('VITE_');
+
+// Option 2: Use through CashioClient
+const cashio = new CashioClient({
+  // ... other config
+  ipfs: {
+    gatewayUrl: import.meta.env.VITE_IPFS_GATEWAY_URL,
+    jwt: import.meta.env.VITE_IPFS_JWT,
+  },
+});
+
+// Upload recovery key (encrypted with password)
+const result = await cashio.uploadRecoveryKey(
+  'your-recovery-key-data',
+  'user-password',
+  { userId: 'user-123' } // optional metadata
+);
+console.log('Recovery key stored at:', result.cid);
+
+// Retrieve and decrypt recovery key
+const recoveryKey = await cashio.retrieveRecoveryKey(result.cid, 'user-password');
+
+// Upload arbitrary JSON data
+const jsonResult = await cashio.uploadJSONToIPFS({
+  type: 'wallet-backup',
+  data: { /* ... */ }
+});
+console.log('JSON stored at:', jsonResult.ipfsUri);
+```
+
+### Direct IPFS Client Usage
+
+```typescript
+import { IPFSClient, RecoveryKeyUtils } from '@cash-io/sdk';
+
+const ipfs = new IPFSClient({
+  gatewayUrl: 'https://gateway.pinata.cloud',
+  jwt: 'your-pinata-jwt',
+});
+
+// Upload raw data
+const result = await ipfs.upload('Hello IPFS!', { name: 'hello.txt' });
+
+// Upload JSON
+const jsonResult = await ipfs.uploadJSON({ foo: 'bar' });
+
+// Retrieve data
+const data = await ipfs.retrieve(result.cid);
+console.log(data.text); // "Hello IPFS!"
+
+// Encrypt and upload recovery key
+const encryptedData = await RecoveryKeyUtils.encrypt('secret-key', 'password');
+const recoveryResult = await ipfs.uploadRecoveryKey(encryptedData);
+
+// Retrieve and decrypt
+const recoveryData = await ipfs.retrieveRecoveryKey(recoveryResult.cid);
+const secret = await RecoveryKeyUtils.decrypt(recoveryData, 'password');
 ```
 
 ## 📚 Documentation

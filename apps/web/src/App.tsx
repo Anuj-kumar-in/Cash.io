@@ -4,6 +4,7 @@ import { WagmiProvider } from 'wagmi';
 import { config } from './config/wagmi';
 import { SDKProvider } from './hooks/useSDK';
 import Layout from './components/Layout';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Shield from './pages/Shield';
 import Transfer from './pages/Transfer';
@@ -28,12 +29,30 @@ function App() {
           <BrowserRouter>
             <div className="noise-overlay" />
             <Routes>
-              <Route path="/" element={<Layout />}>
+              {/* Public Landing Page */}
+              <Route path="/" element={<Landing />} />
+
+              {/* App Routes with Layout */}
+              <Route path="/app" element={<Layout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="shield" element={<Shield />} />
                 <Route path="transfer" element={<Transfer />} />
                 <Route path="bridge" element={<Bridge />} />
                 <Route path="settings" element={<Settings />} />
+              </Route>
+
+              {/* Legacy routes - redirect to /app */}
+              <Route path="/shield" element={<Layout />}>
+                <Route index element={<Shield />} />
+              </Route>
+              <Route path="/transfer" element={<Layout />}>
+                <Route index element={<Transfer />} />
+              </Route>
+              <Route path="/bridge" element={<Layout />}>
+                <Route index element={<Bridge />} />
+              </Route>
+              <Route path="/settings" element={<Layout />}>
+                <Route index element={<Settings />} />
               </Route>
             </Routes>
           </BrowserRouter>

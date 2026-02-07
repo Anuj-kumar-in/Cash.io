@@ -9,6 +9,7 @@ import { CashNote, createNote, generateNullifier, NoteData } from "./note.js";
 import { ZKProver, ProofInputs, Proof } from "./prover.js";
 import { AccountAbstractionClient, UserOperationReceipt } from "./aa.js";
 import { BridgeClient, BridgeDeposit, BridgeWithdrawal } from "./bridge.js";
+import { IPFSClient, IPFSConfig, IPFSUploadResult, RecoveryKeyData, RecoveryKeyUtils } from "./ipfs.js";
 
 /**
  * SDK Configuration
@@ -43,6 +44,9 @@ export interface CashioConfig {
         withdraw?: string;
         transfer?: string;
     };
+
+    // IPFS configuration for decentralized storage
+    ipfs?: IPFSConfig;
 }
 
 /**
@@ -82,6 +86,7 @@ export class CashioClient {
     private prover: ZKProver;
     private aaClient: AccountAbstractionClient;
     private bridgeClient: BridgeClient;
+    private ipfsClient?: IPFSClient;
     private config: CashioConfig;
 
     // User's notes (local storage)
@@ -102,6 +107,11 @@ export class CashioClient {
             solanaBridgeAddress: config.solanaBridgeAddress,
             rootstockBridgeAddress: config.rootstockBridgeAddress,
         });
+
+        // Initialize IPFS client if config provided
+        if (config.ipfs) {
+            this.ipfsClient = new IPFSClient(config.ipfs);
+        }
     }
 
     // ============ Account Management ============
@@ -397,6 +407,80 @@ export class CashioClient {
         return total;
     }
 
+    // ============ IPFS Operations ============
+
+    /**
+     * Get the IPFS client instance
+     * @throws Error if IPFS is not configured
+     */
+    getIPFSClient(): IPFSClient {
+        if (!this.ipfsClient) {
+            throw new Error('IPFS is not configured. Provide ipfs config in CashioConfig.');
+        }
+        return this.ipfsClient;
+    }
+
+    /**
+     * Check if IPFS is configured
+     */
+    hasIPFS(): boolean {
+        return !!this.ipfsClient;
+    }
+
+    /**
+     * Upload recovery key to IPFS
+     * Encrypts the recovery key with the provided password before uploading
+     */
+    async uploadRecoveryKey(
+        recoveryKey: string,
+        password: string,
+        metadata?: Record<string, unknown>
+    ): Promise<IPFSUploadResult> {
+        const ipfs = this.getIPFSClient();
+        const encryptedData = await RecoveryKeyUtils.encrypt(recoveryKey, password);
+        encryptedData.metadata = metadata;
+        return ipfs.uploadRecoveryKey(encryptedData);
+    }
+
+    /**
+     * Retrieve and decrypt recovery key from IPFS
+     */
+    async retrieveRecoveryKey(cid: string, password: string): Promise<string> {
+        const ipfs = this.getIPFSClient();
+        const recoveryData = await ipfs.retrieveRecoveryKey(cid);
+        return RecoveryKeyUtils.decrypt(recoveryData, password);
+    }
+
+    /**
+     * Upload arbitrary data to IPFS
+     */
+    async uploadToIPFS(
+        data: Uint8Array | string,
+        options?: { name?: string; pinToIPFS?: boolean }
+    ): Promise<IPFSUploadResult> {
+        const ipfs = this.getIPFSClient();
+        return ipfs.upload(data, options);
+    }
+
+    /**
+     * Upload JSON data to IPFS
+     */
+    async uploadJSONToIPFS<T extends Record<string, unknown>>(
+        data: T,
+        options?: { name?: string; pinToIPFS?: boolean }
+    ): Promise<IPFSUploadResult> {
+        const ipfs = this.getIPFSClient();
+        return ipfs.uploadJSON(data, options);
+    }
+
+    /**
+     * Retrieve data from IPFS
+     */
+    async retrieveFromIPFS(cid: string) {
+        const ipfs = this.getIPFSClient();
+        return ipfs.retrieve(cid);
+    }
+
     /**
      * Get all notes
      */
@@ -456,3 +540,13 @@ export { CashNote, createNote, generateNullifier } from "./note.js";
 export { ZKProver } from "./prover.js";
 export { AccountAbstractionClient } from "./aa.js";
 export { BridgeClient } from "./bridge.js";
+export {
+    IPFSClient,
+    IPFSConfig,
+    IPFSUploadResult,
+    IPFSRetrieveResult,
+    RecoveryKeyData,
+    RecoveryKeyUtils,
+    ipfsClient,
+    DEFAULT_IPFS_GATEWAYS
+} from "./ipfs.js";

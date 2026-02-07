@@ -5,7 +5,8 @@
  */
 
 import { createTransactionAgentGraph, createSimpleTransactionGraph, createHealthMonitorGraph } from "./graphs/transactionGraph.js";
-import { AgentState, AgentStateType } from "./state/agentState.js";
+import { AgentState } from "./state/agentState.js";
+import type { AgentStateType } from "./state/agentState.js";
 
 export {
     // Graphs
@@ -15,6 +16,9 @@ export {
 
     // State
     AgentState,
+};
+
+export type {
     AgentStateType,
 };
 

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
 import { WalletModal } from '../components/WalletModal';
-import { supportedChains, ChainInfo, getChainById, ChainCategory } from '../config/chains';
+import { supportedChains, type ChainInfo, getChainById, type ChainCategory } from '../config/chains';
 import { cashSubnet } from '../config/wagmi';
 
 export default function Bridge() {
@@ -180,8 +180,8 @@ export default function Bridge() {
                                     type="button"
                                     onClick={() => setCategoryFilter(cat as ChainCategory | 'all')}
                                     className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${categoryFilter === cat
-                                            ? 'bg-black text-white'
-                                            : 'bg-[var(--color-subtle)] hover:bg-[var(--color-border)]'
+                                        ? 'bg-black text-white'
+                                        : 'bg-[var(--color-subtle)] hover:bg-[var(--color-border)]'
                                         }`}
                                 >
                                     {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -191,8 +191,8 @@ export default function Bridge() {
                                 type="button"
                                 onClick={() => setShowTestnets(!showTestnets)}
                                 className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${showTestnets
-                                        ? 'bg-[var(--color-warning)] text-white'
-                                        : 'bg-[var(--color-subtle)] hover:bg-[var(--color-border)]'
+                                    ? 'bg-[var(--color-warning)] text-white'
+                                    : 'bg-[var(--color-subtle)] hover:bg-[var(--color-border)]'
                                     }`}
                             >
                                 Testnets
@@ -324,8 +324,8 @@ export default function Bridge() {
                             ].map((step, i) => (
                                 <div key={i} className="flex items-center gap-3">
                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center ${step.done
-                                            ? 'bg-[var(--color-success)] text-white'
-                                            : 'bg-[var(--color-subtle)]'
+                                        ? 'bg-[var(--color-success)] text-white'
+                                        : 'bg-[var(--color-subtle)]'
                                         }`}>
                                         {step.done ? <CheckCircle2 size={14} /> : <Clock size={14} className="animate-pulse" />}
                                     </div>
@@ -423,7 +423,7 @@ export default function Bridge() {
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => balance && setAmount(balance.formatted)}
+                                        onClick={() => balance && setAmount((Number(balance.value) / Math.pow(10, balance.decimals)).toString())}
                                         className="px-3 py-1 bg-black text-white text-xs font-semibold rounded-md hover:bg-[var(--color-accent)]"
                                     >
                                         MAX
@@ -435,7 +435,7 @@ export default function Bridge() {
                             </div>
                             {balance && (
                                 <p className="text-xs text-[var(--color-muted)] mt-2">
-                                    Balance: {parseFloat(balance.formatted).toFixed(4)} {balance.symbol}
+                                    Balance: {(Number(balance.value) / Math.pow(10, balance.decimals)).toFixed(4)} {balance.symbol}
                                 </p>
                             )}
                         </div>

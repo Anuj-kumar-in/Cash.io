@@ -37,7 +37,13 @@ export default function Shield() {
     const [txStatus, setTxStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
     const [lastTxHash, setLastTxHash] = useState<string>('');
 
-    const publicBalance = balance ? balance.formatted : '0';
+    // Format balance from bigint value
+    const formatBalanceValue = (bal: typeof balance) => {
+        if (!bal) return '0';
+        return (Number(bal.value) / Math.pow(10, bal.decimals)).toString();
+    };
+
+    const publicBalance = formatBalanceValue(balance);
     const shieldedBalanceFormatted = formatEther(shieldedBalance);
     const maxAmount = activeTab === 'shield' ? publicBalance : shieldedBalanceFormatted;
 
@@ -155,8 +161,8 @@ export default function Shield() {
                             resetForm();
                         }}
                         className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-semibold transition-all ${activeTab === tab.id
-                                ? 'bg-black text-white shadow-lg'
-                                : 'text-[var(--color-muted)] hover:text-black'
+                            ? 'bg-black text-white shadow-lg'
+                            : 'text-[var(--color-muted)] hover:text-black'
                             }`}
                     >
                         <tab.icon size={18} />

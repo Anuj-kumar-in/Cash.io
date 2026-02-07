@@ -32,27 +32,30 @@ import {
 } from 'wagmi/chains';
 import { injected, metaMask, walletConnect } from 'wagmi/connectors';
 
-// Custom Cash.io Hub Chain (Avalanche Subnet)
+// Custom Cash.io Hub Chain
+// For development: Using Sepolia testnet (Chain ID 11155111) until local subnet is deployed
+// For production: Change to actual Cash.io Subnet (Chain ID 99999)
 export const cashSubnet = {
-    id: 99999,
-    name: 'Cash.io Subnet',
+    // Use Sepolia for development, change to 99999 for production
+    id: 11155111,
+    name: 'Cash.io Hub (Sepolia)',
     nativeCurrency: {
         decimals: 18,
-        name: 'Cash',
-        symbol: 'CASH',
+        name: 'SepoliaETH',
+        symbol: 'ETH',
     },
     rpcUrls: {
         default: {
-            http: [import.meta.env.VITE_HUB_RPC_URL || 'https://rpc.cash.io'],
+            http: [import.meta.env.VITE_HUB_RPC_URL || 'https://sepolia.drpc.org'],
         },
         public: {
-            http: [import.meta.env.VITE_HUB_RPC_URL || 'https://rpc.cash.io'],
+            http: [import.meta.env.VITE_HUB_RPC_URL || 'https://sepolia.drpc.org'],
         },
     },
     blockExplorers: {
-        default: { name: 'Cash Explorer', url: 'https://explorer.cash.io' },
+        default: { name: 'Etherscan', url: 'https://sepolia.etherscan.io' },
     },
-    testnet: false,
+    testnet: true,
 } as const;
 
 // Bitcoin L2 / Sidechain definitions

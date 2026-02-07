@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi';
 import { formatEther, parseEther } from 'viem';
-import { supportedChains, ChainInfo, getChainById } from '../config/chains';
+import { supportedChains, type ChainInfo, getChainById } from '../config/chains';
 import { contractAddresses, cashSubnet } from '../config/wagmi';
 
 // Types

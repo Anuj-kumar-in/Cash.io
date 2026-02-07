@@ -73,7 +73,7 @@ async function main() {
     // 7. Deploy Bridges
     console.log("📦 Deploying EthBridge...");
     const EthBridge = await ethers.getContractFactory("EthBridge");
-    const ethBridge = await EthBridge.deploy(shieldedPoolAddress);
+    const ethBridge = await EthBridge.deploy(shieldedPoolAddress, 99999); // 99999 is hub chain ID
     await ethBridge.waitForDeployment();
     const ethBridgeAddress = await ethBridge.getAddress();
     console.log("   ✅ EthBridge:", ethBridgeAddress);
@@ -82,8 +82,8 @@ async function main() {
     const SolanaBridge = await ethers.getContractFactory("SolanaBridge");
     const solanaBridge = await SolanaBridge.deploy(
         shieldedPoolAddress,
-        2, // Guardian threshold
-        [deployer.address] // Initial guardians (replace with actual guardian addresses)
+        99999, // Hub chain ID
+        "0x0000000000000000000000000000000000000000000000000000000000000000" // Solana bridge program ID
     );
     await solanaBridge.waitForDeployment();
     const solanaBridgeAddress = await solanaBridge.getAddress();
@@ -93,7 +93,8 @@ async function main() {
     const RootstockBridge = await ethers.getContractFactory("RootstockBridge");
     const rootstockBridge = await RootstockBridge.deploy(
         shieldedPoolAddress,
-        30 // RSK chain ID
+        99999, // Hub chain ID
+        false // isTestnet
     );
     await rootstockBridge.waitForDeployment();
     const rootstockBridgeAddress = await rootstockBridge.getAddress();
@@ -102,21 +103,22 @@ async function main() {
     // 8. Configure contracts
     console.log("\n⚙️ Configuring contracts...");
 
+    // Skip whitelisting and funding for now - paymaster needs deposit function
     // Whitelist shielded pool methods in paymaster
-    console.log("   Adding whitelisted methods to Paymaster...");
-    await paymaster.addWhitelistedMethod(shieldedPoolAddress, "deposit(bytes32)");
-    await paymaster.addWhitelistedMethod(shieldedPoolAddress, "withdraw(bytes,bytes32,bytes32,address,address,uint256)");
-    await paymaster.addWhitelistedMethod(shieldedPoolAddress, "privateTransfer(bytes,bytes32,bytes32,bytes32,bytes32,bytes32)");
-    console.log("   ✅ Paymaster methods whitelisted");
+    // console.log("   Adding whitelisted methods to Paymaster...");
+    // await paymaster.addWhitelistedMethod(shieldedPoolAddress, "deposit(bytes32)");
+    // await paymaster.addWhitelistedMethod(shieldedPoolAddress, "withdraw(bytes,bytes32,bytes32,address,address,uint256)");
+    // await paymaster.addWhitelistedMethod(shieldedPoolAddress, "privateTransfer(bytes,bytes32,bytes32,bytes32,bytes32,bytes32)");
+    // console.log("   ✅ Paymaster methods whitelisted");
 
-    // Fund paymaster
-    const paymasterFunding = ethers.parseEther("1");
-    console.log(`   Funding Paymaster with ${ethers.formatEther(paymasterFunding)} ETH...`);
-    await deployer.sendTransaction({
-        to: paymasterAddress,
-        value: paymasterFunding,
-    });
-    console.log("   ✅ Paymaster funded");
+    // // Fund paymaster
+    // const paymasterFunding = ethers.parseEther("1");
+    // console.log(`   Funding Paymaster with ${ethers.formatEther(paymasterFunding)} ETH...`);
+    // await deployer.sendTransaction({
+    //     to: paymasterAddress,
+    //     value: paymasterFunding,
+    // });
+    // console.log("   ✅ Paymaster funded");
 
     // 9. Save addresses
     const addresses: DeployedAddresses = {

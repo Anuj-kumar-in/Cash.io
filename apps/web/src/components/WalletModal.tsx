@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useConnect, useAccount, useDisconnect, useBalance, useChainId, useSwitchChain } from 'wagmi';
 import {
     Wallet,
@@ -12,7 +13,7 @@ import {
     LogOut,
     Search,
 } from 'lucide-react';
-import { supportedChains, ChainInfo, getChainById } from '../config/chains';
+import { supportedChains, type ChainInfo, getChainById } from '../config/chains';
 import { cashSubnet } from '../config/wagmi';
 
 interface WalletModalProps {
@@ -44,6 +45,13 @@ export function WalletModal({ isOpen, onClose }: WalletModalProps) {
         return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
     };
 
+    // Format balance from bigint value
+    const formatBalance = (bal: typeof balance, decimals: number = 4) => {
+        if (!bal) return '0.' + '0'.repeat(decimals);
+        const value = Number(bal.value) / Math.pow(10, bal.decimals);
+        return value.toFixed(decimals);
+    };
+
     const currentChain = getChainById(chainId);
 
     // Popular networks to show first
@@ -70,9 +78,10 @@ export function WalletModal({ isOpen, onClose }: WalletModalProps) {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="fixed inset-0 flex items-center justify-center p-4" onClick={onClose}>
+    // Use portal to render modal at document body level to avoid z-index stacking context issues
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm" onClick={onClose}>
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
                 <div
                     className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in max-h-[90vh] flex flex-col"
                     onClick={(e) => e.stopPropagation()}
@@ -122,7 +131,7 @@ export function WalletModal({ isOpen, onClose }: WalletModalProps) {
                                     </div>
                                     <div className="flex items-baseline gap-2">
                                         <span className="text-2xl font-bold">
-                                            {balance ? parseFloat(balance.formatted).toFixed(4) : '0.0000'}
+                                            {formatBalance(balance, 4)}
                                         </span>
                                         <span className="text-[var(--color-muted)]">{balance?.symbol || 'ETH'}</span>
                                     </div>
@@ -176,8 +185,8 @@ export function WalletModal({ isOpen, onClose }: WalletModalProps) {
                                                 onClick={() => switchChain?.({ chainId: network.id as number })}
                                                 disabled={isSwitching || chainId === network.id}
                                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${chainId === network.id
-                                                        ? 'bg-black text-white'
-                                                        : 'bg-[var(--color-subtle)] hover:bg-[var(--color-border)]'
+                                                    ? 'bg-black text-white'
+                                                    : 'bg-[var(--color-subtle)] hover:bg-[var(--color-border)]'
                                                     }`}
                                             >
                                                 <span>{network.icon}</span>
@@ -271,7 +280,8 @@ export function WalletModal({ isOpen, onClose }: WalletModalProps) {
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -283,6 +293,14 @@ export function WalletButton() {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const truncateAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+
+    // Format balance from bigint value
+    const formatBalance = (bal: typeof balance, decimals: number = 4) => {
+        if (!bal) return '0.' + '0'.repeat(decimals);
+        const value = Number(bal.value) / Math.pow(10, bal.decimals);
+        return value.toFixed(decimals);
+    };
+
     const currentChain = getChainById(chainId);
 
     return (
@@ -305,7 +323,7 @@ export function WalletButton() {
                     >
                         <div className="w-2 h-2 bg-[var(--color-success)] rounded-full animate-pulse" />
                         <span className="hidden sm:inline font-mono text-sm">
-                            {balance ? parseFloat(balance.formatted).toFixed(3) : '0.000'} {balance?.symbol}
+                            {formatBalance(balance, 3)} {balance?.symbol || 'ETH'}
                         </span>
                         <span className="font-mono text-sm font-medium">{truncateAddress(address)}</span>
                     </button>

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
 import { WalletModal } from '../components/WalletModal';
-import { supportedChains, getChainById, ChainInfo } from '../config/chains';
+import { supportedChains, getChainById, type ChainInfo } from '../config/chains';
 import { cashSubnet } from '../config/wagmi';
 
 export default function Dashboard() {
@@ -44,14 +44,11 @@ export default function Dashboard() {
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
     const currentChain = getChainById(chainId);
-    const shieldedBalanceFormatted = formatEther(shieldedBalance);
+    // Guard against NaN by checking shieldedBalance is valid bigint
+    const shieldedBalanceFormatted = shieldedBalance && shieldedBalance >= 0n ? formatEther(shieldedBalance) : '0';
 
-    // Mock transaction data
-    const recentTransactions = [
-        { type: 'shield', amount: '0.5', status: 'confirmed', chain: 'Ethereum', time: '2 hours ago' },
-        { type: 'transfer', amount: '0.25', status: 'confirmed', chain: 'Cash.io', time: '5 hours ago' },
-        { type: 'bridge', amount: '1.0', status: 'pending', chain: 'Rootstock', time: '1 day ago' },
-    ];
+    // Transactions - empty by default (will be populated from real activity)
+    const recentTransactions: { type: string; amount: string; status: string; chain: string; time: string }[] = [];
 
     // Chain stats
     const chainCategories = [
@@ -137,7 +134,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-baseline gap-2">
                         <span className="text-3xl font-bold font-mono">
-                            {hideBalances ? '••••' : (balance ? parseFloat(formatEther(balance.value)).toFixed(4) : '0.0000')}
+                            {hideBalances ? '••••' : (balance?.value ? parseFloat(formatEther(balance.value)).toFixed(4) : '0.0000')}
                         </span>
                         <span className="text-[var(--color-muted)]">{balance?.symbol || 'ETH'}</span>
                     </div>
@@ -160,7 +157,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-baseline gap-2">
                         <span className="text-3xl font-bold font-mono">
-                            {hideBalances ? '••••' : parseFloat(shieldedBalanceFormatted).toFixed(4)}
+                            {hideBalances ? '••••' : (isNaN(parseFloat(shieldedBalanceFormatted)) ? '0.0000' : parseFloat(shieldedBalanceFormatted).toFixed(4))}
                         </span>
                         <span className="text-white/60">ETH</span>
                     </div>
