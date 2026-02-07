@@ -3,9 +3,10 @@
 /* ========================================
    CASH.IO - Corporate Black & White Theme
    High contrast, minimalist, premium design
+   Supports Light and Dark modes
    ======================================== */
 
-/* Theme Variables */
+/* Light Theme Variables (Default) */
 @theme {
   --color-primary: #000000;
   --color-secondary: #ffffff;
@@ -19,6 +20,19 @@
   
   --font-display: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Dark Theme Variables */
+:root.dark {
+  --color-primary: #ffffff;
+  --color-secondary: #0a0a0a;
+  --color-accent: #e5e5e5;
+  --color-muted: #a3a3a3;
+  --color-subtle: #1a1a1a;
+  --color-border: #2a2a2a;
+  --color-success: #22c55e;
+  --color-error: #f87171;
+  --color-warning: #fbbf24;
 }
 
 /* Base Styles */
@@ -37,6 +51,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Selection */
@@ -66,9 +81,15 @@ body {
 
 /* Utility Classes */
 .glass {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--color-secondary);
   backdrop-filter: blur(20px);
   border: 1px solid var(--color-border);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+:root.dark .glass {
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .glass-dark {
@@ -158,7 +179,11 @@ body {
 
 .input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 3px rgba(128, 128, 128, 0.2);
+}
+
+:root.dark .input:focus {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
 }
 
 .input::placeholder {
@@ -177,6 +202,10 @@ body {
 .card:hover {
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
   border-color: var(--color-primary);
+}
+
+:root.dark .card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
 .card-dark {

@@ -28,6 +28,7 @@ export default function Transfer() {
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
     const [txStatus, setTxStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
     const [lastTxHash, setLastTxHash] = useState('');
+    const [recipientNote, setRecipientNote] = useState<any>(null);
     const [copied, setCopied] = useState(false);
 
     const shieldedBalanceFormatted = formatEther(shieldedBalance);
@@ -65,11 +66,13 @@ export default function Transfer() {
 
             const result = await transfer(
                 selectedNotes as [string, string],
-                [amountWei, changeAmount]
+                [amountWei, changeAmount],
+                recipient
             );
 
             if (result) {
                 setLastTxHash(result.transactionHash);
+                setRecipientNote(result.recipientNote);
                 setTxStatus('success');
             } else {
                 setTxStatus('error');
@@ -87,6 +90,7 @@ export default function Transfer() {
         setNote('');
         setTxStatus('idle');
         setLastTxHash('');
+        setRecipientNote(null);
     };
 
     const toggleNoteSelection = (commitment: string) => {
@@ -172,14 +176,43 @@ export default function Transfer() {
                         </p>
                         <div className="space-y-4">
                             {lastTxHash && (
-                                <div className="flex items-center justify-center gap-2 bg-[var(--color-subtle)] px-4 py-2 rounded-lg font-mono text-sm">
-                                    <span>{lastTxHash.slice(0, 10)}...{lastTxHash.slice(-6)}</span>
-                                    <button
-                                        onClick={() => handleCopy(lastTxHash)}
-                                        className="hover:text-[var(--color-muted)] transition-colors"
-                                    >
-                                        {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
-                                    </button>
+                                <div className="space-y-2">
+                                    <div className="text-xs text-[var(--color-muted)] font-medium uppercase">Transaction Hash</div>
+                                    <div className="flex items-center justify-center gap-2 bg-[var(--color-subtle)] px-4 py-2 rounded-lg font-mono text-sm">
+                                        <span>{lastTxHash.slice(0, 10)}...{lastTxHash.slice(-6)}</span>
+                                        <button
+                                            onClick={() => handleCopy(lastTxHash)}
+                                            className="hover:text-[var(--color-muted)] transition-colors"
+                                        >
+                                            {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {recipientNote && (
+                                <div className="p-4 bg-[var(--color-warning)]/10 rounded-xl border border-[var(--color-warning)]/20 text-left">
+                                    <div className="flex items-center gap-2 mb-2 text-[var(--color-warning)]">
+                                        <AlertCircle size={18} />
+                                        <span className="font-bold text-sm">Action Required: Share Note with Recipient</span>
+                                    </div>
+                                    <p className="text-xs text-[var(--color-muted)] mb-3">
+                                        This is a private transfer. The recipient needs this Note Secret to claim their assets in their Cash.io wallet.
+                                    </p>
+                                    <div className="flex items-center gap-2 bg-[var(--color-subtle)] p-3 rounded-lg font-mono text-[10px] break-all border border-black/5">
+                                        <div className="flex-1 opacity-60">
+                                            {JSON.stringify(recipientNote).slice(0, 50)}...
+                                        </div>
+                                        <button
+                                            onClick={() => handleCopy(JSON.stringify(recipientNote, (k, v) => typeof v === 'bigint' ? v.toString() : v))}
+                                            className="btn btn-secondary btn-sm h-8"
+                                        >
+                                            {copied ? 'Copied!' : 'Copy Note'}
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-[var(--color-muted)] mt-2 italic">
+                                        Recipient should go to Settings &gt; Import Note to claim.
+                                    </p>
                                 </div>
                             )}
                             <div className="flex items-center justify-center gap-3 text-sm text-[var(--color-muted)]">

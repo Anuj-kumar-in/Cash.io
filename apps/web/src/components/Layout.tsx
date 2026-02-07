@@ -10,9 +10,12 @@ import {
     Menu,
     X,
     ExternalLink,
+    Sun,
+    Moon,
 } from 'lucide-react';
 import { WalletButton } from './WalletModal';
 import { useSDK } from '../hooks/useSDK';
+import { useTheme } from '../hooks/useTheme';
 import { getChainById } from '../config/chains';
 
 const navigation = [
@@ -29,28 +32,29 @@ export default function Layout() {
     const { isConnected } = useAccount();
     const chainId = useChainId();
     const { isLoading: sdkLoading } = useSDK();
+    const { isDark, toggleTheme } = useTheme();
 
     const currentChain = getChainById(chainId);
 
     return (
-        <div className="min-h-screen bg-white bg-grid">
+        <div className="min-h-screen bg-[var(--color-secondary)] bg-grid transition-colors duration-300">
             {/* Header */}
             <header className="fixed top-0 left-0 right-0 z-40 glass">
                 <div className="container-app">
                     <div className="flex items-center justify-between h-16">
                         {/* Logo */}
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-xl">C</span>
+                            <div className="w-10 h-10 bg-[var(--color-primary)] rounded-lg flex items-center justify-center">
+                                <span className="text-[var(--color-secondary)] font-bold text-xl">C</span>
                             </div>
                             <div>
-                                <h1 className="text-lg font-bold tracking-tight">CASH.IO</h1>
+                                <h1 className="text-lg font-bold tracking-tight text-[var(--color-primary)]">CASH.IO</h1>
                                 <p className="text-xs text-[var(--color-muted)] -mt-1">Private Finance Protocol</p>
                             </div>
                         </div>
 
                         {/* Desktop Navigation */}
-                        <nav className="hidden md:flex items-center gap-1">
+                        <nav className="hidden md:flex items-center gap-1 ">
                             {navigation.map((item) => {
                                 const isActive = location.pathname === item.href;
                                 return (
@@ -58,8 +62,8 @@ export default function Layout() {
                                         key={item.name}
                                         to={item.href}
                                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive
-                                            ? 'bg-black text-white'
-                                            : 'text-[var(--color-muted)] hover:bg-[var(--color-subtle)] hover:text-black'
+                                            ? 'bg-[var(--color-primary)] text-[var(--color-secondary)]'
+                                            : 'text-[var(--color-muted)] hover:bg-[var(--color-subtle)] hover:text-[var(--color-primary)]'
                                             }`}
                                     >
                                         <item.icon size={18} />
@@ -69,12 +73,21 @@ export default function Layout() {
                             })}
                         </nav>
 
-                        {/* Wallet Connection */}
+                        {/* Right Side Controls */}
                         <div className="flex items-center gap-3">
                             {/* SDK Loading Indicator */}
                             {sdkLoading && (
                                 <div className="w-2 h-2 bg-[var(--color-warning)] rounded-full animate-pulse" />
                             )}
+
+                            {/* Theme Toggle */}
+                            <button
+                                onClick={toggleTheme}
+                                className="p-2 hover:bg-[var(--color-subtle)] rounded-lg transition-all"
+                                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                            >
+                                {isDark ? <Sun size={20} className="text-[var(--color-primary)]" /> : <Moon size={20} className="text-[var(--color-primary)]" />}
+                            </button>
 
                             <WalletButton />
 
@@ -91,7 +104,7 @@ export default function Layout() {
 
                 {/* Mobile Navigation */}
                 {mobileMenuOpen && (
-                    <nav className="md:hidden border-t border-[var(--color-border)] bg-white animate-fade-in">
+                    <nav className="md:hidden border-t border-[var(--color-border)] bg-[var(--color-secondary)] animate-fade-in">
                         <div className="container-app py-4 space-y-1">
                             {navigation.map((item) => {
                                 const isActive = location.pathname === item.href;
@@ -101,7 +114,7 @@ export default function Layout() {
                                         to={item.href}
                                         onClick={() => setMobileMenuOpen(false)}
                                         className={`flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all ${isActive
-                                            ? 'bg-black text-white'
+                                            ? 'bg-[var(--color-primary)] text-[var(--color-secondary)]'
                                             : 'text-[var(--color-muted)] hover:bg-[var(--color-subtle)]'
                                             }`}
                                     >
@@ -123,7 +136,7 @@ export default function Layout() {
             </main>
 
             {/* Footer */}
-            <footer className="border-t border-[var(--color-border)] py-8">
+            <footer className="border-t border-[var(--color-border)] py-8 bg-[var(--color-secondary)]">
                 <div className="container-app">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-6">
@@ -134,7 +147,7 @@ export default function Layout() {
                                 href="https://docs.cash.io"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-sm text-[var(--color-muted)] hover:text-black transition-colors"
+                                className="flex items-center gap-1 text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors"
                             >
                                 Documentation <ExternalLink size={14} />
                             </a>
@@ -151,3 +164,4 @@ export default function Layout() {
         </div>
     );
 }
+

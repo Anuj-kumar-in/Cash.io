@@ -33,6 +33,7 @@ export default function Dashboard() {
     const {
         shieldedBalance,
         notes,
+        transactions,
         chainBalances,
         isInitialized,
         isLoading,
@@ -47,8 +48,14 @@ export default function Dashboard() {
     // Guard against NaN by checking shieldedBalance is valid bigint
     const shieldedBalanceFormatted = shieldedBalance && shieldedBalance >= 0n ? formatEther(shieldedBalance) : '0';
 
-    // Transactions - empty by default (will be populated from real activity)
-    const recentTransactions: { type: string; amount: string; status: string; chain: string; time: string }[] = [];
+    // Map real transactions from SDK
+    const recentTransactions = transactions.map(tx => ({
+        type: tx.type,
+        amount: formatEther(tx.amount),
+        status: tx.status === 'confirmed' ? 'confirmed' : 'pending',
+        chain: getChainById(tx.chainId)?.name.split(' ')[0] || 'Unknown',
+        time: new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    })).slice(0, 5); // Show last 5
 
     // Chain stats
     const chainCategories = [

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { config } from './config/wagmi';
 import { SDKProvider } from './hooks/useSDK';
+import { ThemeProvider } from './hooks/useTheme';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
@@ -25,41 +26,44 @@ function App() {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <SDKProvider>
-          <BrowserRouter>
-            <div className="noise-overlay" />
-            <Routes>
-              {/* Public Landing Page */}
-              <Route path="/" element={<Landing />} />
+        <ThemeProvider>
+          <SDKProvider>
+            <BrowserRouter>
+              <div className="noise-overlay" />
+              <Routes>
+                {/* Public Landing Page */}
+                <Route path="/" element={<Landing />} />
 
-              {/* App Routes with Layout */}
-              <Route path="/app" element={<Layout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="shield" element={<Shield />} />
-                <Route path="transfer" element={<Transfer />} />
-                <Route path="bridge" element={<Bridge />} />
-                <Route path="settings" element={<Settings />} />
-              </Route>
+                {/* App Routes with Layout */}
+                <Route path="/app" element={<Layout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="shield" element={<Shield />} />
+                  <Route path="transfer" element={<Transfer />} />
+                  <Route path="bridge" element={<Bridge />} />
+                  <Route path="settings" element={<Settings />} />
+                </Route>
 
-              {/* Legacy routes - redirect to /app */}
-              <Route path="/shield" element={<Layout />}>
-                <Route index element={<Shield />} />
-              </Route>
-              <Route path="/transfer" element={<Layout />}>
-                <Route index element={<Transfer />} />
-              </Route>
-              <Route path="/bridge" element={<Layout />}>
-                <Route index element={<Bridge />} />
-              </Route>
-              <Route path="/settings" element={<Layout />}>
-                <Route index element={<Settings />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </SDKProvider>
+                {/* Legacy routes - redirect to /app */}
+                <Route path="/shield" element={<Layout />}>
+                  <Route index element={<Shield />} />
+                </Route>
+                <Route path="/transfer" element={<Layout />}>
+                  <Route index element={<Transfer />} />
+                </Route>
+                <Route path="/bridge" element={<Layout />}>
+                  <Route index element={<Bridge />} />
+                </Route>
+                <Route path="/settings" element={<Layout />}>
+                  <Route index element={<Settings />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </SDKProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
 }
 
 export default App;
+

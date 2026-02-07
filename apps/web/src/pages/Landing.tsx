@@ -9,7 +9,6 @@ import {
     ArrowRight,
     ChevronRight,
     ChevronDown,
-    Check,
     Github,
     Twitter,
     ExternalLink,
@@ -21,15 +20,18 @@ import {
     TrendingUp,
     Users,
     Activity,
-    Layers,
     Code2,
     MessageCircle,
+    Sun,
+    Moon,
 } from 'lucide-react';
 import { WalletModal } from '../components/WalletModal';
 import { supportedChains } from '../config/chains';
+import { useTheme } from '../hooks/useTheme';
 
 export default function Landing() {
     const { isConnected } = useAccount();
+    const { isDark, toggleTheme } = useTheme();
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
     const [activeFeature, setActiveFeature] = useState(0);
     const [scrollY, setScrollY] = useState(0);
@@ -142,29 +144,38 @@ export default function Landing() {
     ];
 
     return (
-        <div className="min-h-screen bg-white overflow-x-hidden">
+        <div className="min-h-screen bg-[var(--color-secondary)] overflow-x-hidden transition-colors duration-300">
             {/* Navigation */}
-            <nav className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-md border-b border-[var(--color-border)]">
+            <nav className="fixed top-0 left-0 right-0 z-40 bg-[var(--color-secondary)]/80 backdrop-blur-md border-b border-[var(--color-border)] transition-colors">
                 <div className="container-app">
                     <div className="flex items-center justify-between h-16 md:h-20">
                         <Link to="/" className="flex items-center gap-2 md:gap-3">
-                            <div className="w-8 h-8 md:w-10 md:h-10 bg-black rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-sm md:text-lg">C</span>
+                            <div className="w-8 h-8 md:w-10 md:h-10 bg-[var(--color-primary)] rounded-lg flex items-center justify-center">
+                                <span className="text-[var(--color-secondary)] font-bold text-sm md:text-lg">C</span>
                             </div>
-                            <span className="font-bold text-lg md:text-xl">Cash.io</span>
+                            <span className="font-bold text-lg md:text-xl text-[var(--color-primary)]">Cash.io</span>
                         </Link>
 
                         <div className="hidden lg:flex items-center gap-8">
-                            <a href="#features" className="text-sm font-medium text-[var(--color-muted)] hover:text-black transition-colors">Features</a>
-                            <a href="#how-it-works" className="text-sm font-medium text-[var(--color-muted)] hover:text-black transition-colors">How It Works</a>
-                            <a href="#chains" className="text-sm font-medium text-[var(--color-muted)] hover:text-black transition-colors">Chains</a>
-                            <a href="#faq" className="text-sm font-medium text-[var(--color-muted)] hover:text-black transition-colors">FAQ</a>
-                            <a href="https://docs.cash.io" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-[var(--color-muted)] hover:text-black transition-colors flex items-center gap-1">
+                            <a href="#features" className="text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">Features</a>
+                            <a href="#how-it-works" className="text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">How It Works</a>
+                            <a href="#chains" className="text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">Chains</a>
+                            <a href="#faq" className="text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">FAQ</a>
+                            <a href="https://docs.cash.io" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors flex items-center gap-1">
                                 Docs <ExternalLink size={12} />
                             </a>
                         </div>
 
                         <div className="flex items-center gap-2 md:gap-3">
+                            {/* Theme Toggle */}
+                            <button
+                                onClick={toggleTheme}
+                                className="p-2 hover:bg-[var(--color-subtle)] rounded-lg transition-all"
+                                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                            >
+                                {isDark ? <Sun size={20} className="text-[var(--color-primary)]" /> : <Moon size={20} className="text-[var(--color-primary)]" />}
+                            </button>
+
                             {isConnected ? (
                                 <Link to="/app" className="btn btn-primary btn-sm">
                                     <span className="hidden sm:inline">Open App</span>
@@ -246,7 +257,7 @@ export default function Landing() {
                                     {chain.icon}
                                 </div>
                             ))}
-                            <div className="w-8 h-8 md:w-10 md:h-10 bg-black text-white rounded-full flex items-center justify-center text-xs font-bold">
+                            <div className="w-8 h-8 md:w-10 md:h-10 bg-[var(--color-primary)] text-[var(--color-secondary)] rounded-full flex items-center justify-center text-xs font-bold">
                                 +{totalChains - 8}
                             </div>
                         </div>
@@ -270,7 +281,7 @@ export default function Landing() {
             </section>
 
             {/* Stats Section */}
-            <section className="py-12 md:py-20 bg-black text-white">
+            <section className="py-12 md:py-20 bg-[var(--color-primary)] text-[var(--color-secondary)]">
                 <div className="container-app">
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                         {stats.map((stat) => (
@@ -300,11 +311,11 @@ export default function Landing() {
                         {features.map((feature, i) => (
                             <div
                                 key={feature.title}
-                                className={`card ${i === activeFeature ? 'bg-black text-white border-black scale-105' : ''} cursor-pointer transition-all duration-300 hover:scale-105 relative overflow-hidden`}
+                                className={`card ${i === activeFeature ? 'bg-[var(--color-primary)] text-[var(--color-secondary)] border-[var(--color-primary)] scale-105' : ''} cursor-pointer transition-all duration-300 hover:scale-105 relative overflow-hidden`}
                                 onClick={() => setActiveFeature(i)}
                             >
                                 <div className="flex items-center justify-between mb-4">
-                                    <feature.icon size={28} className={i === activeFeature ? 'text-white' : 'text-black'} />
+                                    <feature.icon size={28} className={i === activeFeature ? 'text-[var(--color-secondary)]' : 'text-[var(--color-primary)]'} />
                                     <span className={`text-xs font-bold px-2 py-1 rounded-full ${i === activeFeature ? 'bg-white/20' : 'bg-[var(--color-subtle)]'}`}>
                                         {feature.stats}
                                     </span>
@@ -328,7 +339,7 @@ export default function Landing() {
                             <button
                                 key={i}
                                 onClick={() => setActiveFeature(i)}
-                                className={`h-1.5 rounded-full transition-all ${i === activeFeature ? 'w-8 bg-black' : 'w-4 bg-[var(--color-border)]'}`}
+                                className={`h-1.5 rounded-full transition-all ${i === activeFeature ? 'w-8 bg-[var(--color-primary)]' : 'w-4 bg-[var(--color-border)]'}`}
                             />
                         ))}
                     </div>
@@ -353,8 +364,8 @@ export default function Landing() {
                                 {i < howItWorks.length - 1 && (
                                     <div className="hidden lg:block absolute top-12 left-full w-full h-0.5 bg-[var(--color-border)] -translate-x-1/2 z-0" />
                                 )}
-                                <div className="card bg-white relative z-10 h-full hover:shadow-xl transition-all group-hover:-translate-y-1">
-                                    <div className="absolute -top-3 -left-3 md:-top-4 md:-left-4 w-10 h-10 md:w-12 md:h-12 bg-black text-white rounded-full flex items-center justify-center font-bold text-sm md:text-lg shadow-lg">
+                                <div className="card bg-[var(--color-secondary)] relative z-10 h-full hover:shadow-xl transition-all group-hover:-translate-y-1">
+                                    <div className="absolute -top-3 -left-3 md:-top-4 md:-left-4 w-10 h-10 md:w-12 md:h-12 bg-[var(--color-primary)] text-[var(--color-secondary)] rounded-full flex items-center justify-center font-bold text-sm md:text-lg shadow-lg">
                                         {step.step}
                                     </div>
                                     <step.icon size={24} className="text-[var(--color-muted)] mb-4 mt-4" />
@@ -395,7 +406,7 @@ export default function Landing() {
                                     </span>
                                 ))}
                                 {evmChains.length > 6 && (
-                                    <span className="px-2 md:px-3 py-1 bg-black text-white rounded-full text-xs font-medium cursor-pointer hover:bg-gray-800">
+                                    <span className="px-2 md:px-3 py-1 bg-[var(--color-primary)] text-[var(--color-secondary)] rounded-full text-xs font-medium cursor-pointer hover:opacity-80">
                                         +{evmChains.length - 6} more
                                     </span>
                                 )}
@@ -444,7 +455,7 @@ export default function Landing() {
                                 title={chain.name}
                             >
                                 {chain.icon}
-                                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-[var(--color-primary)] text-[var(--color-secondary)] text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
                                     {chain.name}
                                 </div>
                             </div>
@@ -466,7 +477,7 @@ export default function Landing() {
 
                     <div className="grid md:grid-cols-3 gap-4 md:gap-6 px-4 md:px-0">
                         {testimonials.map((t, i) => (
-                            <div key={i} className="card bg-white hover:shadow-xl transition-all">
+                            <div key={i} className="card bg-[var(--color-secondary)] hover:shadow-xl transition-all">
                                 <div className="flex gap-1 mb-4">
                                     {[...Array(t.rating)].map((_, j) => (
                                         <Star key={j} size={16} className="fill-yellow-400 text-yellow-400" />
@@ -474,7 +485,7 @@ export default function Landing() {
                                 </div>
                                 <p className="text-[var(--color-muted)] mb-4 italic">"{t.text}"</p>
                                 <div className="flex items-center gap-3 pt-4 border-t border-[var(--color-border)]">
-                                    <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-bold">
+                                    <div className="w-10 h-10 bg-[var(--color-primary)] text-[var(--color-secondary)] rounded-full flex items-center justify-center font-bold">
                                         {t.name.charAt(0)}
                                     </div>
                                     <div>
@@ -525,7 +536,7 @@ export default function Landing() {
             </section>
 
             {/* CTA Section */}
-            <section className="py-16 md:py-24 bg-black text-white relative overflow-hidden">
+            <section className="py-16 md:py-24 bg-[var(--color-primary)] text-[var(--color-secondary)] relative overflow-hidden">
                 {/* Background decorations */}
                 <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
                 <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
@@ -540,12 +551,12 @@ export default function Landing() {
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             {isConnected ? (
-                                <Link to="/app" className="btn btn-lg bg-white text-black hover:bg-white/90 w-full sm:w-auto">
+                                <Link to="/app" className="btn btn-lg bg-[var(--color-secondary)] text-[var(--color-primary)] hover:opacity-90 w-full sm:w-auto">
                                     Open Dashboard
                                     <ArrowRight size={18} className="ml-2" />
                                 </Link>
                             ) : (
-                                <button onClick={() => setIsWalletModalOpen(true)} className="btn btn-lg bg-white text-black hover:bg-white/90 w-full sm:w-auto">
+                                <button onClick={() => setIsWalletModalOpen(true)} className="btn btn-lg bg-[var(--color-secondary)] text-[var(--color-primary)] hover:opacity-90 w-full sm:w-auto">
                                     Connect Wallet
                                     <ArrowRight size={18} className="ml-2" />
                                 </button>
@@ -560,27 +571,27 @@ export default function Landing() {
             </section>
 
             {/* Footer */}
-            <footer className="py-12 md:py-16 border-t border-[var(--color-border)]">
+            <footer className="py-12 md:py-16 border-t border-[var(--color-border)] bg-[var(--color-secondary)]">
                 <div className="container-app px-4 md:px-0">
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
                         <div>
                             <div className="flex items-center gap-2 mb-4">
-                                <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-                                    <span className="text-white font-bold text-sm">C</span>
+                                <div className="w-8 h-8 bg-[var(--color-primary)] rounded-lg flex items-center justify-center">
+                                    <span className="text-[var(--color-secondary)] font-bold text-sm">C</span>
                                 </div>
-                                <span className="font-bold text-xl">Cash.io</span>
+                                <span className="font-bold text-xl text-[var(--color-primary)]">Cash.io</span>
                             </div>
                             <p className="text-sm text-[var(--color-muted)] mb-4">
                                 Privacy-first multi-chain transactions powered by zero-knowledge proofs.
                             </p>
                             <div className="flex gap-3">
-                                <a href="https://twitter.com/cashio" className="w-9 h-9 bg-[var(--color-subtle)] rounded-full flex items-center justify-center hover:bg-black hover:text-white transition-colors">
+                                <a href="https://twitter.com/cashio" className="w-9 h-9 bg-[var(--color-subtle)] rounded-full flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-[var(--color-secondary)] transition-colors">
                                     <Twitter size={16} />
                                 </a>
-                                <a href="https://github.com/cash-io" className="w-9 h-9 bg-[var(--color-subtle)] rounded-full flex items-center justify-center hover:bg-black hover:text-white transition-colors">
+                                <a href="https://github.com/cash-io" className="w-9 h-9 bg-[var(--color-subtle)] rounded-full flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-[var(--color-secondary)] transition-colors">
                                     <Github size={16} />
                                 </a>
-                                <a href="https://discord.gg/cashio" className="w-9 h-9 bg-[var(--color-subtle)] rounded-full flex items-center justify-center hover:bg-black hover:text-white transition-colors">
+                                <a href="https://discord.gg/cashio" className="w-9 h-9 bg-[var(--color-subtle)] rounded-full flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-[var(--color-secondary)] transition-colors">
                                     <MessageCircle size={16} />
                                 </a>
                             </div>
@@ -589,29 +600,29 @@ export default function Landing() {
                         <div>
                             <h4 className="font-bold mb-4">Product</h4>
                             <div className="space-y-2">
-                                <a href="#features" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">Features</a>
-                                <a href="#how-it-works" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">How It Works</a>
-                                <a href="#chains" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">Supported Chains</a>
-                                <a href="#faq" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">FAQ</a>
+                                <a href="#features" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">Features</a>
+                                <a href="#how-it-works" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">How It Works</a>
+                                <a href="#chains" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">Supported Chains</a>
+                                <a href="#faq" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">FAQ</a>
                             </div>
                         </div>
 
                         <div>
                             <h4 className="font-bold mb-4">Developers</h4>
                             <div className="space-y-2">
-                                <a href="https://docs.cash.io" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">Documentation</a>
-                                <a href="https://github.com/cash-io" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">GitHub</a>
-                                <a href="#" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">SDK</a>
-                                <a href="#" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">API Reference</a>
+                                <a href="https://docs.cash.io" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">Documentation</a>
+                                <a href="https://github.com/cash-io" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">GitHub</a>
+                                <a href="#" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">SDK</a>
+                                <a href="#" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">API Reference</a>
                             </div>
                         </div>
 
                         <div>
                             <h4 className="font-bold mb-4">Legal</h4>
                             <div className="space-y-2">
-                                <a href="#" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">Privacy Policy</a>
-                                <a href="#" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">Terms of Service</a>
-                                <a href="#" className="block text-sm text-[var(--color-muted)] hover:text-black transition-colors">Cookie Policy</a>
+                                <a href="#" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">Privacy Policy</a>
+                                <a href="#" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">Terms of Service</a>
+                                <a href="#" className="block text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors">Cookie Policy</a>
                             </div>
                         </div>
                     </div>

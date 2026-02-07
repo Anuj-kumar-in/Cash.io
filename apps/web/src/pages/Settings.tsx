@@ -8,6 +8,7 @@ import {
     Key,
     Bell,
     Moon,
+    Sun,
     Globe,
     Copy,
     ExternalLink,
@@ -21,6 +22,7 @@ import {
     AlertCircle,
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
+import { useTheme } from '../hooks/useTheme';
 import { WalletModal } from '../components/WalletModal';
 import { cashSubnet } from '../config/wagmi';
 
@@ -30,12 +32,13 @@ export default function Settings() {
     const chainId = useChainId();
     const { disconnect } = useDisconnect();
     const { notes, shieldedBalance, exportNotes, importNote } = useSDK();
+    const { isDark, toggleTheme } = useTheme();
 
     const [copied, setCopied] = useState(false);
     const [showRecovery, setShowRecovery] = useState(false);
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-    const [darkMode, setDarkMode] = useState(false);
     const [notifications, setNotifications] = useState(true);
+    const [importText, setImportText] = useState('');
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     const handleCopy = (text: string) => {
@@ -86,6 +89,30 @@ export default function Settings() {
             }
         };
         input.click();
+    };
+
+    const handleManualImport = () => {
+        try {
+            if (!importText) return;
+            const importedData = JSON.parse(importText, (key, value) => {
+                if (key === 'amount') return BigInt(value);
+                return value;
+            });
+
+            if (Array.isArray(importedData)) {
+                importedData.forEach((note: any) => importNote(note));
+                setSuccessMessage(`Imported ${importedData.length} notes!`);
+            } else {
+                importNote(importedData);
+                setSuccessMessage('Note imported successfully!');
+            }
+            setImportText('');
+            setTimeout(() => setSuccessMessage(null), 3000);
+        } catch (err) {
+            console.error('Failed to import note:', err);
+            setSuccessMessage('Invalid note format');
+            setTimeout(() => setSuccessMessage(null), 3000);
+        }
     };
 
     const getNetworkName = (id: number) => {
@@ -208,13 +235,13 @@ export default function Settings() {
                                 <span className="text-sm text-[var(--color-muted)]">{balance?.symbol || 'ETH'}</span>
                             </div>
                         </div>
-                        <div className="p-4 bg-black text-white rounded-xl">
-                            <span className="text-sm text-white/60">Shielded Balance</span>
+                        <div className="p-4 bg-[var(--color-primary)] text-[var(--color-secondary)] rounded-xl">
+                            <span className="text-sm opacity-60">Shielded Balance</span>
                             <div className="flex items-baseline gap-2 mt-1">
                                 <span className="text-xl font-bold">
                                     {parseFloat(formatEther(shieldedBalance)).toFixed(4)}
                                 </span>
-                                <span className="text-sm text-white/60">ETH</span>
+                                <span className="text-sm opacity-60">ETH</span>
                             </div>
                         </div>
                     </div>
@@ -282,14 +309,35 @@ export default function Settings() {
                         <div className="flex items-center gap-3">
                             <Upload size={20} className="text-[var(--color-muted)]" />
                             <div className="text-left">
-                                <span className="font-medium">Import Notes</span>
+                                <span className="font-medium">Restore from File</span>
                                 <p className="text-sm text-[var(--color-muted)]">
-                                    Restore notes from a backup file
+                                    Restore notes from a .json backup file
                                 </p>
                             </div>
                         </div>
                         <ChevronRight size={18} className="text-[var(--color-muted)]" />
                     </button>
+
+                    {/* Manual Import */}
+                    <div className="p-4 bg-[var(--color-subtle)] rounded-xl space-y-3">
+                        <div className="flex items-center gap-3">
+                            <Key size={20} className="text-[var(--color-muted)]" />
+                            <span className="font-medium">Manual Import</span>
+                        </div>
+                        <textarea
+                            value={importText}
+                            onChange={(e) => setImportText(e.target.value)}
+                            placeholder="Paste Note Secret here (JSON format)..."
+                            className="w-full h-24 p-3 text-xs font-mono bg-[var(--color-secondary)] border border-[var(--color-border)] rounded-lg resize-none outline-none focus:ring-2 ring-black"
+                        />
+                        <button
+                            onClick={handleManualImport}
+                            disabled={!importText}
+                            className="btn btn-primary btn-sm w-full disabled:opacity-50"
+                        >
+                            Import Note
+                        </button>
+                    </div>
 
                     {/* Warning */}
                     <div className="flex items-start gap-3 p-4 bg-[var(--color-warning)]/10 rounded-xl">
@@ -321,19 +369,19 @@ export default function Settings() {
                     {/* Dark Mode */}
                     <div className="flex items-center justify-between p-4 bg-[var(--color-subtle)] rounded-xl">
                         <div className="flex items-center gap-3">
-                            <Moon size={20} className="text-[var(--color-muted)]" />
+                            {isDark ? <Moon size={20} className="text-[var(--color-muted)]" /> : <Sun size={20} className="text-[var(--color-muted)]" />}
                             <div>
                                 <span className="font-medium">Dark Mode</span>
-                                <p className="text-sm text-[var(--color-muted)]">Coming soon</p>
+                                <p className="text-sm text-[var(--color-muted)]">{isDark ? 'Currently enabled' : 'Currently disabled'}</p>
                             </div>
                         </div>
                         <button
-                            disabled
-                            className={`w-12 h-6 rounded-full transition-all ${darkMode ? 'bg-black' : 'bg-[var(--color-border)]'
-                                } relative opacity-50`}
+                            onClick={toggleTheme}
+                            className={`w-12 h-6 rounded-full transition-all ${isDark ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-border)]'
+                                } relative`}
                         >
                             <div
-                                className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all shadow-sm ${darkMode ? 'right-0.5' : 'left-0.5'
+                                className={`w-5 h-5 bg-[var(--color-secondary)] rounded-full absolute top-0.5 transition-all shadow-sm ${isDark ? 'right-0.5' : 'left-0.5'
                                     }`}
                             />
                         </button>
@@ -350,11 +398,11 @@ export default function Settings() {
                         </div>
                         <button
                             onClick={() => setNotifications(!notifications)}
-                            className={`w-12 h-6 rounded-full transition-all ${notifications ? 'bg-black' : 'bg-[var(--color-border)]'
+                            className={`w-12 h-6 rounded-full transition-all ${notifications ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-border)]'
                                 } relative`}
                         >
                             <div
-                                className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all shadow-sm ${notifications ? 'right-0.5' : 'left-0.5'
+                                className={`w-5 h-5 bg-[var(--color-secondary)] rounded-full absolute top-0.5 transition-all shadow-sm ${notifications ? 'right-0.5' : 'left-0.5'
                                     }`}
                             />
                         </button>

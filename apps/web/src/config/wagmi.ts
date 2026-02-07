@@ -1,4 +1,5 @@
 import { createConfig, http } from 'wagmi';
+import { defineChain } from 'viem';
 import {
     mainnet,
     sepolia,
@@ -30,20 +31,14 @@ import {
     manta,
     polygonZkEvm,
 } from 'wagmi/chains';
-import { injected, metaMask, walletConnect } from 'wagmi/connectors';
+import { injected, walletConnect } from 'wagmi/connectors';
 
 // Custom Cash.io Hub Chain
 // For development: Using Sepolia testnet (Chain ID 11155111) until local subnet is deployed
-// For production: Change to actual Cash.io Subnet (Chain ID 99999)
-export const cashSubnet = {
-    // Use Sepolia for development, change to 99999 for production
+export const cashSubnet = defineChain({
+    ...sepolia,
     id: 11155111,
     name: 'Cash.io Hub (Sepolia)',
-    nativeCurrency: {
-        decimals: 18,
-        name: 'SepoliaETH',
-        symbol: 'ETH',
-    },
     rpcUrls: {
         default: {
             http: [import.meta.env.VITE_HUB_RPC_URL || 'https://sepolia.drpc.org'],
@@ -52,14 +47,10 @@ export const cashSubnet = {
             http: [import.meta.env.VITE_HUB_RPC_URL || 'https://sepolia.drpc.org'],
         },
     },
-    blockExplorers: {
-        default: { name: 'Etherscan', url: 'https://sepolia.etherscan.io' },
-    },
-    testnet: true,
-} as const;
+});
 
 // Bitcoin L2 / Sidechain definitions
-export const rootstock = {
+export const rootstock = defineChain({
     id: 30,
     name: 'Rootstock',
     nativeCurrency: { decimals: 18, name: 'RSK Bitcoin', symbol: 'RBTC' },
@@ -70,10 +61,9 @@ export const rootstock = {
     blockExplorers: {
         default: { name: 'RSK Explorer', url: 'https://explorer.rsk.co' },
     },
-    testnet: false,
-} as const;
+});
 
-export const rootstockTestnet = {
+export const rootstockTestnet = defineChain({
     id: 31,
     name: 'Rootstock Testnet',
     nativeCurrency: { decimals: 18, name: 'Test RSK Bitcoin', symbol: 'tRBTC' },
@@ -85,9 +75,9 @@ export const rootstockTestnet = {
         default: { name: 'RSK Testnet Explorer', url: 'https://explorer.testnet.rsk.co' },
     },
     testnet: true,
-} as const;
+});
 
-export const bob = {
+export const bob = defineChain({
     id: 60808,
     name: 'BOB',
     nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
@@ -98,10 +88,9 @@ export const bob = {
     blockExplorers: {
         default: { name: 'BOB Explorer', url: 'https://explorer.gobob.xyz' },
     },
-    testnet: false,
-} as const;
+});
 
-export const bobTestnet = {
+export const bobTestnet = defineChain({
     id: 111,
     name: 'BOB Testnet',
     nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
@@ -113,9 +102,9 @@ export const bobTestnet = {
         default: { name: 'BOB Testnet Explorer', url: 'https://testnet-explorer.gobob.xyz' },
     },
     testnet: true,
-} as const;
+});
 
-export const merlin = {
+export const merlin = defineChain({
     id: 4200,
     name: 'Merlin Chain',
     nativeCurrency: { decimals: 18, name: 'Bitcoin', symbol: 'BTC' },
@@ -126,10 +115,9 @@ export const merlin = {
     blockExplorers: {
         default: { name: 'Merlin Explorer', url: 'https://scan.merlinchain.io' },
     },
-    testnet: false,
-} as const;
+});
 
-export const merlinTestnet = {
+export const merlinTestnet = defineChain({
     id: 686868,
     name: 'Merlin Testnet',
     nativeCurrency: { decimals: 18, name: 'Bitcoin', symbol: 'BTC' },
@@ -141,9 +129,9 @@ export const merlinTestnet = {
         default: { name: 'Merlin Testnet Explorer', url: 'https://testnet-scan.merlinchain.io' },
     },
     testnet: true,
-} as const;
+});
 
-export const bitlayer = {
+export const bitlayer = defineChain({
     id: 200901,
     name: 'Bitlayer',
     nativeCurrency: { decimals: 18, name: 'Bitcoin', symbol: 'BTC' },
@@ -154,10 +142,9 @@ export const bitlayer = {
     blockExplorers: {
         default: { name: 'Bitlayer Explorer', url: 'https://scan.bitlayer.org' },
     },
-    testnet: false,
-} as const;
+});
 
-export const bitlayerTestnet = {
+export const bitlayerTestnet = defineChain({
     id: 200810,
     name: 'Bitlayer Testnet',
     nativeCurrency: { decimals: 18, name: 'Bitcoin', symbol: 'BTC' },
@@ -169,9 +156,9 @@ export const bitlayerTestnet = {
         default: { name: 'Bitlayer Testnet Explorer', url: 'https://testnet-scan.bitlayer.org' },
     },
     testnet: true,
-} as const;
+});
 
-export const core = {
+export const core = defineChain({
     id: 1116,
     name: 'Core',
     nativeCurrency: { decimals: 18, name: 'Core', symbol: 'CORE' },
@@ -182,10 +169,9 @@ export const core = {
     blockExplorers: {
         default: { name: 'Core Explorer', url: 'https://scan.coredao.org' },
     },
-    testnet: false,
-} as const;
+});
 
-export const coreTestnet = {
+export const coreTestnet = defineChain({
     id: 1115,
     name: 'Core Testnet',
     nativeCurrency: { decimals: 18, name: 'Test Core', symbol: 'tCORE' },
@@ -197,7 +183,7 @@ export const coreTestnet = {
         default: { name: 'Core Testnet Explorer', url: 'https://scan.test.btcs.network' },
     },
     testnet: true,
-} as const;
+});
 
 // All supported chains
 export const allChains = [
@@ -222,8 +208,7 @@ export const allChains = [
     zora,
     manta,
     polygonZkEvm,
-    // EVM Testnets
-    sepolia,
+    // EVM Testnets (Exclude explicit Sepolia as it conflicts with cashSubnet ID)
     holesky,
     polygonAmoy,
     arbitrumSepolia,
@@ -254,8 +239,7 @@ const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 
 export const config = createConfig({
     chains: allChains,
     connectors: [
-        injected(),
-        metaMask(),
+        injected(), // Handles MetaMask, Brave, Coinbase Wallet etc.
         walletConnect({ projectId: walletConnectProjectId }),
     ],
     transports: {
@@ -281,7 +265,6 @@ export const config = createConfig({
         [manta.id]: http('https://pacific-rpc.manta.network/http'),
         [polygonZkEvm.id]: http('https://zkevm-rpc.com'),
         // EVM Testnets
-        [sepolia.id]: http('https://sepolia.drpc.org'),
         [holesky.id]: http('https://ethereum-holesky.publicnode.com'),
         [polygonAmoy.id]: http('https://rpc-amoy.polygon.technology'),
         [arbitrumSepolia.id]: http('https://sepolia-rollup.arbitrum.io/rpc'),
@@ -339,7 +322,6 @@ export const contractAddresses: Record<number, {
     [blast.id]: { bridge: import.meta.env.VITE_BLAST_BRIDGE_ADDRESS },
     [mantle.id]: { bridge: import.meta.env.VITE_MANTLE_BRIDGE_ADDRESS },
     // EVM Testnets
-    [sepolia.id]: { bridge: import.meta.env.VITE_SEPOLIA_BRIDGE_ADDRESS },
     [arbitrumSepolia.id]: { bridge: import.meta.env.VITE_ARBITRUM_SEPOLIA_BRIDGE_ADDRESS },
     [optimismSepolia.id]: { bridge: import.meta.env.VITE_OPTIMISM_SEPOLIA_BRIDGE_ADDRESS },
     [baseSepolia.id]: { bridge: import.meta.env.VITE_BASE_SEPOLIA_BRIDGE_ADDRESS },
@@ -369,3 +351,5 @@ export function getChainsWithBridge(): number[] {
         .filter(([_, contracts]) => contracts.bridge && contracts.bridge !== '0x...')
         .map(([chainId]) => parseInt(chainId));
 }
+
+

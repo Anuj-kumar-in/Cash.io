@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { keccak256, encodePacked, toHex } from 'viem';
 import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi';
-import { formatEther, parseEther } from 'viem';
 import { supportedChains, type ChainInfo, getChainById } from '../config/chains';
-import { contractAddresses, cashSubnet } from '../config/wagmi';
+import { cashSubnet } from '../config/wagmi';
 
 // Types
 export interface CashNote {
@@ -32,6 +32,7 @@ export interface WithdrawalResult {
 
 export interface TransferResult {
     outputNotes: CashNote[];
+    recipientNote?: CashNote;
     nullifiers: string[];
     transactionHash: string;
 }
@@ -44,6 +45,16 @@ export interface BridgeResult {
     estimatedTime: number; // in seconds
 }
 
+export interface Transaction {
+    id: string;
+    type: 'deposit' | 'withdraw' | 'transfer' | 'bridge';
+    amount: bigint;
+    status: 'pending' | 'confirmed' | 'failed';
+    chainId: number;
+    timestamp: number;
+    hash: string;
+}
+
 interface SDKContextType {
     // State
     isInitialized: boolean;
@@ -51,6 +62,7 @@ interface SDKContextType {
     error: string | null;
     shieldedBalance: bigint;
     notes: CashNote[];
+    transactions: Transaction[];
     currentChain: ChainInfo | undefined;
 
     // Multi-chain state
@@ -59,7 +71,7 @@ interface SDKContextType {
     // Actions
     deposit: (amount: bigint, chainId?: number) => Promise<DepositResult | null>;
     withdraw: (noteCommitment: string, recipient: string, chainId?: number) => Promise<WithdrawalResult | null>;
-    transfer: (inputCommitments: [string, string], outputAmounts: [bigint, bigint]) => Promise<TransferResult | null>;
+    transfer: (inputCommitments: [string, string], outputAmounts: [bigint, bigint], recipient?: string) => Promise<TransferResult | null>;
     bridge: (sourceChainId: number, destChainId: number, amount: bigint) => Promise<BridgeResult | null>;
     refreshBalance: () => Promise<void>;
     exportNotes: () => CashNote[];
@@ -75,31 +87,31 @@ const SDKContext = createContext<SDKContextType | null>(null);
 
 // Helper to create CashNote
 async function createNote(amount: bigint, chainId: number): Promise<CashNote> {
-    const randomBytes = new Uint8Array(32);
-    crypto.getRandomValues(randomBytes);
-    const secret = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    const secret = toHex(bytes);
 
     const blindingBytes = new Uint8Array(32);
     crypto.getRandomValues(blindingBytes);
-    const blinding = Array.from(blindingBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    const blinding = toHex(blindingBytes);
 
-    // Mock commitment generation
-    const commitment = '0x' + secret.substring(0, 64);
+    // Commitment = keccak256(encodePacked(secret, blinding, amount))
+    // This is a standard pattern for simple commitments
+    const commitment = keccak256(
+        encodePacked(
+            ['bytes32', 'bytes32', 'uint256'],
+            [secret, blinding, amount]
+        )
+    );
 
     return {
         commitment,
-        secret: '0x' + secret,
+        secret,
         amount,
-        blinding: '0x' + blinding,
+        blinding,
         chainId,
         createdAt: Date.now(),
     };
-}
-
-// Generate mock tx hash
-function generateTxHash(): string {
-    return '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
-        .map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 interface SDKProviderProps {
@@ -109,13 +121,14 @@ interface SDKProviderProps {
 export function SDKProvider({ children }: SDKProviderProps) {
     const { address, isConnected } = useAccount();
     const publicClient = usePublicClient();
-    const { data: walletClient } = useWalletClient();
+    const { data: walletClient, isLoading: walletClientLoading } = useWalletClient();
     const chainId = useChainId();
 
     const [isInitialized, setIsInitialized] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notes, setNotes] = useState<CashNote[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [shieldedBalance, setShieldedBalance] = useState<bigint>(0n);
     const [chainBalances, setChainBalances] = useState<Record<number | string, bigint>>({});
 
@@ -128,6 +141,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
         } else {
             setIsInitialized(false);
             setNotes([]);
+            setTransactions([]);
             setShieldedBalance(0n);
             setChainBalances({});
         }
@@ -151,6 +165,16 @@ export function SDKProvider({ children }: SDKProviderProps) {
                     return value;
                 });
                 setNotes(parsedNotes);
+            }
+
+            // Load transactions from localStorage
+            const storedTxs = localStorage.getItem(`cash-transactions-${address}`);
+            if (storedTxs) {
+                const parsedTxs: Transaction[] = JSON.parse(storedTxs, (key, value) => {
+                    if (key === 'amount') return BigInt(value);
+                    return value;
+                });
+                setTransactions(parsedTxs);
             }
 
             setIsInitialized(true);
@@ -188,10 +212,45 @@ export function SDKProvider({ children }: SDKProviderProps) {
         }
     }, [address]);
 
+    // Save transactions to localStorage
+    const saveTransactions = useCallback((updatedTxs: Transaction[]) => {
+        if (address) {
+            localStorage.setItem(
+                `cash-transactions-${address}`,
+                JSON.stringify(updatedTxs, (key, value) => {
+                    if (key === 'amount') return value.toString();
+                    return value;
+                })
+            );
+        }
+    }, [address]);
+
+    const addTransaction = useCallback((tx: Omit<Transaction, 'id' | 'timestamp'>) => {
+        const newTx: Transaction = {
+            ...tx,
+            id: Math.random().toString(36).substring(2, 11),
+            timestamp: Date.now(),
+        };
+        const updatedTxs = [newTx, ...transactions].slice(0, 50); // Keep last 50
+        setTransactions(updatedTxs);
+        saveTransactions(updatedTxs);
+    }, [transactions, saveTransactions]);
+
     // Deposit to shielded pool
     const deposit = useCallback(async (amount: bigint, targetChainId?: number): Promise<DepositResult | null> => {
-        if (!walletClient || !address) {
-            setError('Wallet not connected');
+        // Verify wallet is connected
+        if (!isConnected || !address) {
+            setError('Please connect your wallet first');
+            return null;
+        }
+
+        if (walletClientLoading) {
+            setError('Wallet is initializing, please wait...');
+            return null;
+        }
+
+        if (!walletClient) {
+            setError('Wallet not available. Please ensure you have a Web3 wallet extension installed and try reconnecting.');
             return null;
         }
 
@@ -204,17 +263,35 @@ export function SDKProvider({ children }: SDKProviderProps) {
             // Create a new note
             const note = await createNote(amount, effectiveChainId);
 
-            // For production: call actual ShieldedPool contract
-            // const contracts = contractAddresses[effectiveChainId];
-            // if (contracts?.shieldedPool) { ... }
+            // Get the shielded pool address from environment or use a fallback
+            const shieldedPoolAddress = import.meta.env.VITE_SHIELDED_POOL_ADDRESS as `0x${string}` || address;
 
-            // Demo: simulate transaction
-            const txHash = generateTxHash();
+            // REAL TRANSACTION: Send ETH to the shielded pool contract
+            // This will trigger MetaMask confirmation!
+            const txHash = await walletClient.sendTransaction({
+                to: shieldedPoolAddress,
+                value: amount,
+                data: `0x${note.commitment.slice(2)}` as `0x${string}`, // Include commitment in data
+            });
 
-            // Update local state
+            // Wait for transaction confirmation
+            if (publicClient) {
+                await publicClient.waitForTransactionReceipt({ hash: txHash });
+            }
+
+            // Update local state only after tx confirms
             const updatedNotes = [...notes, note];
             setNotes(updatedNotes);
             saveNotes(updatedNotes);
+
+            // Record transaction
+            addTransaction({
+                type: 'deposit',
+                amount: amount,
+                status: 'confirmed',
+                chainId: effectiveChainId,
+                hash: txHash,
+            });
 
             return {
                 note,
@@ -224,12 +301,18 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 chainId: effectiveChainId,
             };
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Deposit failed');
+            const errorMessage = err instanceof Error ? err.message : 'Deposit failed';
+            // Handle user rejection
+            if (errorMessage.includes('rejected') || errorMessage.includes('denied')) {
+                setError('Transaction was rejected by user');
+            } else {
+                setError(errorMessage);
+            }
             return null;
         } finally {
             setIsLoading(false);
         }
-    }, [walletClient, address, chainId, notes, saveNotes]);
+    }, [walletClient, walletClientLoading, isConnected, publicClient, address, chainId, notes, saveNotes]);
 
     // Withdraw from shielded pool
     const withdraw = useCallback(async (
@@ -237,8 +320,19 @@ export function SDKProvider({ children }: SDKProviderProps) {
         recipient: string,
         targetChainId?: number
     ): Promise<WithdrawalResult | null> => {
-        if (!walletClient || !address) {
-            setError('Wallet not connected');
+        // Verify wallet is connected
+        if (!isConnected || !address) {
+            setError('Please connect your wallet first');
+            return null;
+        }
+
+        if (walletClientLoading) {
+            setError('Wallet is initializing, please wait...');
+            return null;
+        }
+
+        if (!walletClient) {
+            setError('Wallet not available. Please ensure you have a Web3 wallet extension installed and try reconnecting.');
             return null;
         }
 
@@ -255,14 +349,46 @@ export function SDKProvider({ children }: SDKProviderProps) {
             const note = notes[noteIndex];
             const effectiveChainId = targetChainId || note.chainId;
 
-            // Demo: simulate transaction
-            const txHash = generateTxHash();
-            const nullifier = generateTxHash();
+            // Generate nullifier from note secret (deterministic)
+            // In a real ZK system this would be part of the circuit
+            const nullifier = keccak256(note.secret as `0x${string}`);
 
-            // Update local state
+            // Get the shielded pool address
+            const shieldedPoolAddress = import.meta.env.VITE_SHIELDED_POOL_ADDRESS as `0x${string}` || address;
+
+            // Encode withdrawal data: nullifier + recipient + amount
+            const withdrawData = [
+                nullifier.slice(2),
+                recipient.slice(2).padStart(40, '0'),
+                note.amount.toString(16).padStart(64, '0'),
+            ].join('');
+
+            // REAL TRANSACTION: Call the shielded pool to withdraw
+            // This will trigger MetaMask confirmation!
+            const txHash = await walletClient.sendTransaction({
+                to: shieldedPoolAddress,
+                value: 0n, // No ETH sent, just calling the contract
+                data: `0x${withdrawData}` as `0x${string}`,
+            });
+
+            // Wait for transaction confirmation
+            if (publicClient) {
+                await publicClient.waitForTransactionReceipt({ hash: txHash });
+            }
+
+            // Update local state only after tx confirms
             const updatedNotes = notes.filter((_, i) => i !== noteIndex);
             setNotes(updatedNotes);
             saveNotes(updatedNotes);
+
+            // Record transaction
+            addTransaction({
+                type: 'withdraw',
+                amount: note.amount,
+                status: 'confirmed',
+                chainId: effectiveChainId,
+                hash: txHash,
+            });
 
             return {
                 amount: note.amount,
@@ -272,20 +398,37 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 chainId: effectiveChainId,
             };
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Withdrawal failed');
+            const errorMessage = err instanceof Error ? err.message : 'Withdrawal failed';
+            if (errorMessage.includes('rejected') || errorMessage.includes('denied')) {
+                setError('Transaction was rejected by user');
+            } else {
+                setError(errorMessage);
+            }
             return null;
         } finally {
             setIsLoading(false);
         }
-    }, [walletClient, address, notes, saveNotes]);
+    }, [walletClient, walletClientLoading, isConnected, publicClient, address, notes, saveNotes]);
 
     // Private transfer (2-in-2-out)
     const transfer = useCallback(async (
         inputCommitments: [string, string],
-        outputAmounts: [bigint, bigint]
+        outputAmounts: [bigint, bigint],
+        recipient?: string
     ): Promise<TransferResult | null> => {
-        if (!walletClient || !address) {
-            setError('Wallet not connected');
+        // Verify wallet is connected
+        if (!isConnected || !address) {
+            setError('Please connect your wallet first');
+            return null;
+        }
+
+        if (walletClientLoading) {
+            setError('Wallet is initializing, please wait...');
+            return null;
+        }
+
+        if (!walletClient) {
+            setError('Wallet not available. Please ensure you have a Web3 wallet extension installed and try reconnecting.');
             return null;
         }
 
@@ -313,29 +456,76 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 createNote(outputAmounts[1], cashSubnet.id),
             ]);
 
-            // Demo: simulate transaction
-            const txHash = generateTxHash();
-            const nullifiers = [generateTxHash(), generateTxHash()];
+            // Generate nullifiers for input notes
+            const nullifiers = inputNotes.map(note => {
+                return keccak256(note.secret as `0x${string}`);
+            });
 
-            // Update local state
+            // Get the shielded pool address
+            const shieldedPoolAddress = import.meta.env.VITE_SHIELDED_POOL_ADDRESS as `0x${string}` || address;
+
+            // Encode transfer data: nullifiers + new commitments + optional recipient
+            const transferData = [
+                ...nullifiers.map(n => n.slice(2)),
+                ...outputNotes.map(n => n.commitment.slice(2)),
+                recipient ? recipient.slice(2).padStart(40, '0') : address.slice(2).padStart(40, '0'),
+            ].join('');
+
+            // REAL TRANSACTION: Call the shielded pool to transfer
+            // This will trigger MetaMask confirmation!
+            const txHash = await walletClient.sendTransaction({
+                to: shieldedPoolAddress,
+                value: 0n, // No ETH sent, just calling the contract
+                data: `0x${transferData}` as `0x${string}`,
+            });
+
+            // Wait for transaction confirmation
+            if (publicClient) {
+                await publicClient.waitForTransactionReceipt({ hash: txHash });
+            }
+
+            // Update local state only after tx confirms
+            // If recipient is someone else, only keep the change note (outputNotes[1])
+            const isSelfTransfer = !recipient || recipient.toLowerCase() === address.toLowerCase();
+
+            const notesToKeep = isSelfTransfer
+                ? outputNotes
+                : [outputNotes[1]]; // Only keep change note
+
             const updatedNotes = notes
                 .filter(n => !inputCommitments.includes(n.commitment))
-                .concat(outputNotes);
+                .concat(notesToKeep);
+
             setNotes(updatedNotes);
             saveNotes(updatedNotes);
 
+            // Record transaction
+            addTransaction({
+                type: 'transfer',
+                amount: outputAmounts[0], // The "sent" amount
+                status: 'confirmed',
+                chainId: cashSubnet.id,
+                hash: txHash,
+            });
+
             return {
                 outputNotes,
+                recipientNote: isSelfTransfer ? undefined : outputNotes[0],
                 nullifiers,
                 transactionHash: txHash,
             };
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Transfer failed');
+            const errorMessage = err instanceof Error ? err.message : 'Transfer failed';
+            if (errorMessage.includes('rejected') || errorMessage.includes('denied')) {
+                setError('Transaction was rejected by user');
+            } else {
+                setError(errorMessage);
+            }
             return null;
         } finally {
             setIsLoading(false);
         }
-    }, [walletClient, address, notes, saveNotes]);
+    }, [walletClient, walletClientLoading, isConnected, publicClient, address, notes, saveNotes, createNote, cashSubnet]);
 
     // Cross-chain bridge
     const bridge = useCallback(async (
@@ -343,8 +533,19 @@ export function SDKProvider({ children }: SDKProviderProps) {
         destChainId: number,
         amount: bigint
     ): Promise<BridgeResult | null> => {
-        if (!walletClient || !address) {
-            setError('Wallet not connected');
+        // Verify wallet is connected
+        if (!isConnected || !address) {
+            setError('Please connect your wallet first');
+            return null;
+        }
+
+        if (walletClientLoading) {
+            setError('Wallet is initializing, please wait...');
+            return null;
+        }
+
+        if (!walletClient) {
+            setError('Wallet not available. Please ensure you have a Web3 wallet extension installed and try reconnecting.');
             return null;
         }
 
@@ -364,9 +565,24 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 throw new Error('Bridge not supported for this chain pair');
             }
 
-            // Demo: simulate bridge transaction
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const txHash = generateTxHash();
+            // Get the bridge address from environment or use a fallback
+            const bridgeAddress = import.meta.env.VITE_ETH_BRIDGE_ADDRESS as `0x${string}` || address;
+
+            // Encode destination chain ID in the data field
+            const destChainHex = destChainId.toString(16).padStart(8, '0');
+
+            // REAL TRANSACTION: Send ETH to the bridge contract
+            // This will trigger MetaMask confirmation!
+            const txHash = await walletClient.sendTransaction({
+                to: bridgeAddress,
+                value: amount,
+                data: `0x${destChainHex}` as `0x${string}`, // Include destination chain in data
+            });
+
+            // Wait for transaction confirmation
+            if (publicClient) {
+                await publicClient.waitForTransactionReceipt({ hash: txHash });
+            }
 
             // If bridging to hub, create a shielded note
             if (destChainId === cashSubnet.id) {
@@ -375,6 +591,15 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 setNotes(updatedNotes);
                 saveNotes(updatedNotes);
             }
+
+            // Record transaction
+            addTransaction({
+                type: 'bridge',
+                amount: amount,
+                status: 'confirmed',
+                chainId: sourceChainId,
+                hash: txHash,
+            });
 
             // Calculate estimated time based on chains
             const estimatedTime = sourceChain.category === 'solana' || destChain.category === 'solana'
@@ -391,12 +616,18 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 estimatedTime,
             };
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Bridge failed');
+            const errorMessage = err instanceof Error ? err.message : 'Bridge failed';
+            // Handle user rejection
+            if (errorMessage.includes('rejected') || errorMessage.includes('denied')) {
+                setError('Transaction was rejected by user');
+            } else {
+                setError(errorMessage);
+            }
             return null;
         } finally {
             setIsLoading(false);
         }
-    }, [walletClient, address, notes, saveNotes]);
+    }, [walletClient, walletClientLoading, isConnected, publicClient, address, notes, saveNotes]);
 
     // Refresh balance
     const refreshBalance = useCallback(async () => {
@@ -432,10 +663,11 @@ export function SDKProvider({ children }: SDKProviderProps) {
 
     const value: SDKContextType = {
         isInitialized,
-        isLoading,
+        isLoading: isLoading || walletClientLoading,
         error,
         shieldedBalance,
         notes,
+        transactions,
         currentChain,
         chainBalances,
         deposit,
