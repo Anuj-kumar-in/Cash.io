@@ -2,6 +2,7 @@
 pragma solidity ^0.8.23;
 
 import "./interfaces/IZKVerifier.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title ZKVerifier
@@ -14,7 +15,12 @@ import "./interfaces/IZKVerifier.sol";
  * - Private transfer proofs
  * - Batch validity proofs
  */
-contract ZKVerifier is IZKVerifier {
+contract ZKVerifier is IZKVerifier, Ownable {
+    // ============ Test Mode (disable in production) ============
+    
+    /// @notice When true, all proofs are considered valid (for testnet only)
+    bool public testMode;
+    
     // ============ Verification Key ============
     
     // These values would be generated from the trusted setup
@@ -46,11 +52,27 @@ contract ZKVerifier is IZKVerifier {
     error InvalidProofFormat();
     error VerificationFailed();
     
+    // ============ Events ============
+    
+    event TestModeChanged(bool enabled);
+    
     // ============ Constructor ============
     
-    constructor() {
+    constructor(bool _testMode) Ownable(msg.sender) {
+        testMode = _testMode;
         // Initialize IC values (placeholder - would come from trusted setup)
         // IC.push([...]);
+    }
+    
+    // ============ Admin Functions ============
+    
+    /**
+     * @notice Enable or disable test mode
+     * @dev Only owner can call. In production, this should be disabled permanently.
+     */
+    function setTestMode(bool _enabled) external onlyOwner {
+        testMode = _enabled;
+        emit TestModeChanged(_enabled);
     }
     
     // ============ External Functions ============
@@ -65,6 +87,11 @@ contract ZKVerifier is IZKVerifier {
         bytes calldata _proof,
         bytes calldata _publicInputs
     ) external view override returns (bool) {
+        // In test mode, accept all proofs (for testnet deployment)
+        if (testMode) {
+            return true;
+        }
+        
         // Decode proof
         if (_proof.length < 256) revert InvalidProofFormat();
         

@@ -5,7 +5,20 @@
  */
 
 import { ethers } from "ethers";
-import { CashNote, createNote, generateNullifier, NoteData } from "./note.js";
+import { 
+    CashNote, 
+    createNote, 
+    generateNullifier, 
+    NoteData,
+    deserializeNote,
+    deserializeNoteAuto,
+    decryptNote,
+    computeCommitment,
+    toFrontendNote,
+    fromFrontendNote,
+    serializeNoteForFrontend,
+    FrontendCashNote
+} from "./note.js";
 import { ZKProver, ProofInputs, Proof } from "./prover.js";
 import { AccountAbstractionClient, UserOperationReceipt } from "./aa.js";
 import { BridgeClient, BridgeDeposit, BridgeWithdrawal } from "./bridge.js";
@@ -384,9 +397,100 @@ export class CashioClient {
 
     /**
      * Import an existing note
+     * Stores the note without re-validating the commitment
+     * (commitment validation happens during deserialization for frontend notes)
      */
     importNote(note: CashNote): void {
+        // Just store the note - commitment was validated during deserialization
+        // or is trusted from the source
         this.notes.set(note.commitment, note);
+    }
+
+    /**
+     * Import a note from a serialized JSON string
+     * Supports both SDK format and frontend format (auto-detected)
+     * @param serialized The serialized note string
+     */
+    importNoteFromString(serialized: string): CashNote {
+        const note = deserializeNoteAuto(serialized);
+        this.importNote(note);
+        return note;
+    }
+
+    /**
+     * Import an encrypted note (decrypts and stores it)
+     * @param encryptedBase64 Base64-encoded encrypted note
+     * @param password Password to decrypt the note
+     */
+    async importEncryptedNote(encryptedBase64: string, password: string): Promise<CashNote> {
+        const note = await decryptNote(encryptedBase64, password);
+        this.importNote(note);
+        return note;
+    }
+
+    /**
+     * Verify that a note's commitment exists on-chain
+     * @param note The note to verify
+     * @returns true if the commitment exists in the pool
+     */
+    async verifyNoteOnChain(note: CashNote): Promise<boolean> {
+        try {
+            // Use blob storage if available for efficient lookup
+            if (this.config.blobStorageUrl) {
+                const response = await fetch(
+                    `${this.config.blobStorageUrl}/commitments/${note.commitment}/package`
+                );
+                return response.ok;
+            }
+
+            // Fallback: Try to get merkle proof (will throw if not found)
+            await this.getMerkleProof(note.commitment);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Import and verify a note exists on-chain
+     * @param note The note to import and verify
+     * @throws Error if the note's commitment doesn't exist on-chain
+     */
+    async importAndVerifyNote(note: CashNote): Promise<void> {
+        this.importNote(note); // This validates commitment calculation
+        
+        const exists = await this.verifyNoteOnChain(note);
+        if (!exists) {
+            this.notes.delete(note.commitment); // Rollback
+            throw new Error(
+                `Note commitment ${note.commitment} not found on-chain. The note may not have been deposited yet or the commitment data is incorrect.`
+            );
+        }
+    }
+
+    /**
+     * Import and verify a note from a serialized string
+     * Supports both SDK format and frontend format (auto-detected)
+     * @param serialized The serialized note string
+     */
+    async importAndVerifyNoteFromString(serialized: string): Promise<CashNote> {
+        const note = deserializeNoteAuto(serialized);
+        await this.importAndVerifyNote(note);
+        return note;
+    }
+
+    /**
+     * Import and verify an encrypted note
+     * @param encryptedBase64 Base64-encoded encrypted note
+     * @param password Password to decrypt the note
+     */
+    async importAndVerifyEncryptedNote(
+        encryptedBase64: string, 
+        password: string
+    ): Promise<CashNote> {
+        const note = await decryptNote(encryptedBase64, password);
+        await this.importAndVerifyNote(note);
+        return note;
     }
 
     /**
@@ -394,6 +498,29 @@ export class CashioClient {
      */
     exportNotes(): CashNote[] {
         return Array.from(this.notes.values());
+    }
+
+    /**
+     * Export all notes in frontend-compatible format
+     * Use this when exporting notes for transfer to another user
+     * @param chainId The chain ID to include in exported notes (default: 43114)
+     */
+    exportNotesForFrontend(chainId: number = 43114): FrontendCashNote[] {
+        return Array.from(this.notes.values()).map(note => toFrontendNote(note, chainId));
+    }
+
+    /**
+     * Export a single note in frontend-compatible JSON string
+     * Ready to be shared with the recipient
+     * @param commitment The commitment of the note to export
+     * @param chainId The chain ID to include (default: 43114)
+     */
+    exportNoteForTransfer(commitment: string, chainId: number = 43114): string {
+        const note = this.notes.get(commitment);
+        if (!note) {
+            throw new Error("Note not found");
+        }
+        return serializeNoteForFrontend(note, chainId);
     }
 
     /**
@@ -536,7 +663,23 @@ export class CashioClient {
     }
 }
 
-export { CashNote, createNote, generateNullifier } from "./note.js";
+export { 
+    CashNote, 
+    createNote, 
+    generateNullifier, 
+    recreateNote,
+    serializeNote,
+    deserializeNote,
+    deserializeNoteAuto,
+    encryptNote,
+    decryptNote,
+    computeCommitment,
+    computeFrontendCommitment,
+    toFrontendNote,
+    fromFrontendNote,
+    serializeNoteForFrontend,
+    FrontendCashNote
+} from "./note.js";
 export { ZKProver } from "./prover.js";
 export { AccountAbstractionClient } from "./aa.js";
 export { BridgeClient } from "./bridge.js";

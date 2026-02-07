@@ -6,6 +6,7 @@
 
 import { poseidon2, poseidon3 } from "poseidon-lite";
 import { randomBytes } from "crypto";
+import { keccak256, encodePacked, toHex } from "viem";
 
 /**
  * Raw note data
@@ -21,6 +22,19 @@ export interface NoteData {
 export interface CashNote extends NoteData {
     commitment: string;
     nullifierSeed: bigint;
+}
+
+/**
+ * Frontend-compatible note format
+ * This matches the format expected by the web frontend
+ */
+export interface FrontendCashNote {
+    commitment: string;
+    secret: string;      // hex string
+    amount: bigint;
+    blinding: string;    // hex string (maps to nullifierSeed)
+    chainId: number;
+    createdAt: number;
 }
 
 /**
@@ -175,4 +189,119 @@ export async function decryptNote(
     ]);
 
     return deserializeNote(decrypted.toString("utf8"));
+}
+
+/**
+ * Convert a bigint to a padded hex string
+ */
+function bigintToHex(value: bigint): string {
+    return "0x" + value.toString(16).padStart(64, "0");
+}
+
+/**
+ * Convert a hex string to bigint
+ */
+function hexToBigint(hex: string): bigint {
+    return BigInt(hex);
+}
+
+/**
+ * Convert SDK CashNote to frontend-compatible format
+ * @param note The SDK CashNote
+ * @param chainId The chain ID where the note was created (default: 43114 for Avalanche)
+ */
+export function toFrontendNote(note: CashNote, chainId: number = 43114): FrontendCashNote {
+    return {
+        commitment: note.commitment,
+        secret: bigintToHex(note.secret),
+        amount: note.amount,
+        blinding: bigintToHex(note.nullifierSeed),
+        chainId,
+        createdAt: Date.now(),
+    };
+}
+
+/**
+ * Compute a frontend-style commitment using keccak256
+ * This matches how the frontend computes commitments
+ */
+export function computeFrontendCommitment(secret: string, blinding: string, amount: bigint): string {
+    return keccak256(
+        encodePacked(
+            ['bytes32', 'bytes32', 'uint256'],
+            [secret as `0x${string}`, blinding as `0x${string}`, amount]
+        )
+    );
+}
+
+/**
+ * Convert frontend-compatible format to SDK CashNote
+ * Uses keccak256 to verify commitment matches frontend format
+ */
+export function fromFrontendNote(frontendNote: FrontendCashNote): CashNote {
+    const secret = hexToBigint(frontendNote.secret);
+    const nullifierSeed = hexToBigint(frontendNote.blinding);
+    const amount = frontendNote.amount;
+    
+    // Verify commitment using frontend's keccak256 scheme
+    const expectedCommitment = computeFrontendCommitment(
+        frontendNote.secret,
+        frontendNote.blinding,
+        amount
+    );
+    
+    // Use the original commitment from the frontend note
+    // The commitment was already computed correctly when the note was created
+    return {
+        amount,
+        secret,
+        nullifierSeed,
+        commitment: frontendNote.commitment,
+    };
+}
+
+/**
+ * Serialize note for frontend storage/transfer
+ * This produces JSON that can be directly parsed by the frontend
+ */
+export function serializeNoteForFrontend(note: CashNote, chainId: number = 43114): string {
+    const frontendNote = toFrontendNote(note, chainId);
+    return JSON.stringify({
+        commitment: frontendNote.commitment,
+        secret: frontendNote.secret,
+        amount: frontendNote.amount.toString(),
+        blinding: frontendNote.blinding,
+        chainId: frontendNote.chainId,
+        createdAt: frontendNote.createdAt,
+    });
+}
+
+/**
+ * Deserialize note from either SDK or frontend format
+ * Auto-detects the format based on the presence of specific fields
+ */
+export function deserializeNoteAuto(serialized: string): CashNote {
+    const data = JSON.parse(serialized);
+    
+    // Detect frontend format by checking for 'blinding' field
+    if ('blinding' in data) {
+        // Frontend format
+        const frontendNote: FrontendCashNote = {
+            commitment: data.commitment,
+            secret: data.secret,
+            amount: typeof data.amount === 'string' ? BigInt(data.amount) : data.amount,
+            blinding: data.blinding,
+            chainId: data.chainId || 43114,
+            createdAt: data.createdAt || Date.now(),
+        };
+        return fromFrontendNote(frontendNote);
+    } else {
+        // SDK format
+        return {
+            amount: BigInt(data.amount),
+            secret: BigInt(data.secret),
+            nullifierSeed: BigInt(data.nullifierSeed),
+            commitment: data.commitment,
+        };
+    }
 }

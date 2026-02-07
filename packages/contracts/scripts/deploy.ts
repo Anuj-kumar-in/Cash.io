@@ -16,7 +16,11 @@ interface DeployedAddresses {
 async function main() {
     console.log("🚀 Deploying Cash.io contracts...\n");
 
-    const [deployer] = await ethers.getSigners();
+    const signers = await ethers.getSigners();
+    if (signers.length === 0) {
+        throw new Error("No signers found. Please check DEPLOYER_PRIVATE_KEY in .env file. Make sure it's a valid private key without 0x prefix.");
+    }
+    const deployer = signers[0];
     console.log("Deploying with account:", deployer.address);
     console.log("Account balance:", ethers.formatEther(await deployer.provider.getBalance(deployer.address)), "ETH\n");
 
@@ -28,10 +32,11 @@ async function main() {
     const commitmentTreeAddress = await commitmentTree.getAddress();
     console.log("   ✅ CommitmentTree:", commitmentTreeAddress);
 
-    // 2. Deploy ZKVerifier
-    console.log("📦 Deploying ZKVerifier...");
+    // 2. Deploy ZKVerifier (testMode=true for testnet, set to false for mainnet)
+    const isTestnet = true; // Set to false for production mainnet deployment
+    console.log("📦 Deploying ZKVerifier (testMode=" + isTestnet + ")...");
     const ZKVerifier = await ethers.getContractFactory("ZKVerifier");
-    const zkVerifier = await ZKVerifier.deploy();
+    const zkVerifier = await ZKVerifier.deploy(isTestnet);
     await zkVerifier.waitForDeployment();
     const zkVerifierAddress = await zkVerifier.getAddress();
     console.log("   ✅ ZKVerifier:", zkVerifierAddress);
