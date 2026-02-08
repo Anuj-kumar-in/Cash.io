@@ -288,8 +288,33 @@ export default function Bridge() {
             <div className="text-center">
                 <h1 className="text-3xl font-bold tracking-tight">Cross-Chain Bridge</h1>
                 <p className="text-[var(--color-muted)] mt-2">
-                    Bridge assets across 30+ chains with privacy preserved
+                    Bridge assets using shielded notes - no relayers needed!
                 </p>
+            </div>
+
+            {/* How It Works */}
+            <div className="card">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                    <Info size={20} />
+                    How Note-Based Bridging Works
+                </h3>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="p-4 bg-[var(--color-subtle)] rounded-xl">
+                        <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-3 text-sm font-bold">1</div>
+                        <div className="text-sm font-medium">Shield Here</div>
+                        <div className="text-xs text-[var(--color-muted)] mt-1">Deposit on source chain</div>
+                    </div>
+                    <div className="p-4 bg-[var(--color-subtle)] rounded-xl">
+                        <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-3 text-sm font-bold">2</div>
+                        <div className="text-sm font-medium">Download Note</div>
+                        <div className="text-xs text-[var(--color-muted)] mt-1">Your note IS the bridge</div>
+                    </div>
+                    <div className="p-4 bg-[var(--color-subtle)] rounded-xl">
+                        <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-3 text-sm font-bold">3</div>
+                        <div className="text-sm font-medium">Unshield There</div>
+                        <div className="text-xs text-[var(--color-muted)] mt-1">Import note on dest chain</div>
+                    </div>
+                </div>
             </div>
 
             {/* Chain Categories */}
@@ -316,20 +341,22 @@ export default function Bridge() {
                         <div className="w-20 h-20 bg-[var(--color-success)]/10 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle2 size={40} className="text-[var(--color-success)]" />
                         </div>
-                        <h3 className="text-2xl font-bold mb-2">Bridge Initiated!</h3>
+                        <h3 className="text-2xl font-bold mb-2">Funds Shielded!</h3>
                         <p className="text-[var(--color-muted)] mb-2">
                             {sourceChain?.name} → {destChain?.name}
                         </p>
                         <p className="text-sm text-[var(--color-muted)] mb-6">
-                            Estimated time: {getEstimatedTime()}
+                            Download your note file to complete the bridge
                         </p>
 
                         {/* Progress Steps */}
                         <div className="space-y-3 max-w-sm mx-auto mb-8">
                             {[
-                                { label: 'Source chain confirmed', done: true },
-                                { label: 'Relayer processing', done: true },
-                                { label: 'Destination chain pending', done: false },
+                                { label: 'Funds shielded on source chain', done: true },
+                                { label: 'Download note file below', done: true },
+                                { label: 'Switch to destination chain', done: false },
+                                { label: 'Import note in Settings', done: false },
+                                { label: 'Unshield to receive funds', done: false },
                             ].map((step, i) => (
                                 <div key={i} className="flex items-center gap-3">
                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center ${step.done
@@ -356,18 +383,21 @@ export default function Bridge() {
                             <div className="p-4 bg-[var(--color-success)]/10 rounded-xl border border-[var(--color-success)]/20 text-left max-w-sm mx-auto mb-6">
                                 <div className="flex items-center gap-2 mb-2 text-[var(--color-success)]">
                                     <Shield size={18} />
-                                    <span className="font-bold text-sm">Shielded Note Created</span>
+                                    <span className="font-bold text-sm">Bridge Note Created</span>
                                 </div>
                                 <p className="text-xs text-[var(--color-muted)] mb-3">
-                                    Your bridged assets are now shielded. Download this note to backup and access your funds.
+                                    This note IS your bridge. Download it, switch to {destChain?.name}, import in Settings, then unshield to receive your funds.
                                 </p>
                                 <button
                                     onClick={() => downloadNoteFile(bridgedNote)}
                                     className="btn btn-primary w-full"
                                 >
                                     <Download size={16} className="mr-2" />
-                                    Download Note File
+                                    Download Bridge Note
                                 </button>
+                                <p className="text-[10px] text-[var(--color-warning)] mt-2 text-center">
+                                    ⚠️ Keep this file safe! Anyone with it can claim the funds.
+                                </p>
                             </div>
                         )}
 

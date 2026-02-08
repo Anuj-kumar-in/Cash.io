@@ -43,8 +43,7 @@ export interface BridgeResult {
     destChainId: number;
     amount: bigint;
     transactionHash: string;
-    estimatedTime: number; // in seconds
-    note?: CashNote; // The created note for claiming on hub chain
+    note: CashNote; // The created note - this IS the bridge
 }
 
 export interface Transaction {
@@ -116,6 +115,13 @@ async function createNote(amount: bigint, chainId: number): Promise<CashNote> {
         createdAt: Date.now(),
     };
 }
+
+// Transaction receipt wait options for testnets (Sepolia can be slow)
+const TX_WAIT_OPTIONS = {
+    timeout: 120_000, // 2 minutes timeout
+    pollingInterval: 4_000, // Poll every 4 seconds
+    retryCount: 3, // Retry up to 3 times
+};
 
 interface SDKProviderProps {
     children: ReactNode;
@@ -342,7 +348,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
 
             // Wait for transaction confirmation
             if (publicClient) {
-                await publicClient.waitForTransactionReceipt({ hash: txHash });
+                await publicClient.waitForTransactionReceipt({ hash: txHash, ...TX_WAIT_OPTIONS });
                 
                 // Query the current merkle root from the contract after deposit
                 // This root will be needed for withdrawal proof verification
@@ -485,7 +491,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
 
             // Wait for transaction confirmation and check status
             if (publicClient) {
-                const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+                const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash, ...TX_WAIT_OPTIONS });
                 if (receipt.status === 'reverted') {
                     throw new Error('Withdraw transaction reverted on-chain. The contract may have rejected the parameters.');
                 }
@@ -601,7 +607,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
 
             // Wait for transaction confirmation
             if (publicClient) {
-                await publicClient.waitForTransactionReceipt({ hash: txHash });
+                await publicClient.waitForTransactionReceipt({ hash: txHash, ...TX_WAIT_OPTIONS });
             }
 
             // Update local state only after tx confirms
@@ -650,8 +656,9 @@ export function SDKProvider({ children }: SDKProviderProps) {
         }
     }, [walletClient, walletClientLoading, isConnected, publicClient, address, notes, saveNotes, createNote, cashSubnet]);
 
-    // Cross-chain bridge
-    const bridge = useCallback(async (
+    // Cross-chain bridge using note-based approach
+    // Shield on source chain -> Export note -> Import on dest chain -> Unshield
+    const shieldForBridge = useCallback(async (
         sourceChainId: number,
         destChainId: number,
         amount: bigint
@@ -676,51 +683,47 @@ export function SDKProvider({ children }: SDKProviderProps) {
             setIsLoading(true);
             setError(null);
 
-            // Validate chains
-            const sourceChain = getChainById(sourceChainId);
-            const destChain = getChainById(destChainId);
-
-            if (!sourceChain || !destChain) {
-                throw new Error('Invalid chain');
+            // Get the shielded pool address
+            const shieldedPoolAddress = import.meta.env.VITE_SHIELDED_POOL_ADDRESS as `0x${string}`;
+            if (!shieldedPoolAddress) {
+                throw new Error('ShieldedPool address not configured');
             }
 
-            if (!sourceChain.bridgeSupported || !destChain.bridgeSupported) {
-                throw new Error('Bridge not supported for this chain pair');
-            }
-
-            // Get the bridge address from environment
-            const bridgeAddress = import.meta.env.VITE_ETH_BRIDGE_ADDRESS as `0x${string}`;
-            if (!bridgeAddress) {
-                throw new Error('Bridge address not configured');
-            }
-
-            // Create a note for the destination (hub) chain
+            // Create a note tagged with destination chain info
             const note = await createNote(amount, destChainId);
 
-            // Encode the deposit function call: deposit(bytes32 commitment)
+            // Encode the deposit function call on ShieldedPool
             const depositData = encodeFunctionData({
                 abi: parseAbi(['function deposit(bytes32 commitment) external payable']),
                 functionName: 'deposit',
                 args: [note.commitment as `0x${string}`],
             });
 
-            // Call the bridge deposit function with ETH value
+            // Deposit to ShieldedPool on current chain
             const txHash = await walletClient.sendTransaction({
-                to: bridgeAddress,
+                to: shieldedPoolAddress,
                 value: amount,
                 data: depositData,
-                gas: 200000n,
+                gas: 500000n,
             });
 
             // Wait for transaction confirmation
             if (publicClient) {
-                const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+                const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash, ...TX_WAIT_OPTIONS });
                 if (receipt.status === 'reverted') {
-                    throw new Error('Bridge transaction reverted');
+                    throw new Error('Shield transaction reverted');
                 }
+                
+                // Get merkle root for the note
+                const currentMerkleRoot = await publicClient.readContract({
+                    address: shieldedPoolAddress,
+                    abi: [{ name: 'getCurrentRoot', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bytes32' }] }],
+                    functionName: 'getCurrentRoot',
+                });
+                note.merkleRoot = currentMerkleRoot as string;
             }
 
-            // Save the note locally (it will be claimable on hub chain)
+            // Save the note locally
             if (!notes.some(n => n.commitment === note.commitment)) {
                 const updatedNotes = [...notes, note];
                 setNotes(updatedNotes);
@@ -736,24 +739,15 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 hash: txHash,
             });
 
-            // Calculate estimated time based on chains
-            const estimatedTime = sourceChain.category === 'solana' || destChain.category === 'solana'
-                ? 30 * 60 // 30 minutes for Solana
-                : sourceChain.category === 'bitcoin' || destChain.category === 'bitcoin'
-                    ? 20 * 60 // 20 minutes for Bitcoin L2s
-                    : 15 * 60; // 15 minutes for EVM
-
             return {
                 sourceChainId,
                 destChainId,
                 amount,
                 transactionHash: txHash,
-                estimatedTime,
-                note, // Return the created note so user can back it up
+                note, // Return the note - user must download this to complete bridge
             };
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bridge failed';
-            // Handle user rejection
             if (errorMessage.includes('rejected') || errorMessage.includes('denied')) {
                 setError('Transaction was rejected by user');
             } else {
@@ -764,6 +758,15 @@ export function SDKProvider({ children }: SDKProviderProps) {
             setIsLoading(false);
         }
     }, [walletClient, walletClientLoading, isConnected, publicClient, address, notes, saveNotes, createNote, addTransaction]);
+
+    // Legacy bridge function - now uses shieldForBridge
+    const bridge = useCallback(async (
+        sourceChainId: number,
+        destChainId: number,
+        amount: bigint
+    ): Promise<BridgeResult | null> => {
+        return shieldForBridge(sourceChainId, destChainId, amount);
+    }, [shieldForBridge]);
 
     // Refresh balance
     const refreshBalance = useCallback(async () => {
