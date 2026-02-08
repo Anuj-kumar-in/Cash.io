@@ -52,9 +52,13 @@ async function main() {
     const shieldedPoolAddress = await shieldedPool.getAddress();
     console.log("   ✅ ShieldedPool:", shieldedPoolAddress);
 
-    // 4. EntryPoint (use existing or deploy)
-    const entryPointAddress = process.env.ENTRY_POINT_ADDRESS || "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
-    console.log("📦 Using EntryPoint:", entryPointAddress);
+    // 4. Deploy SimpleEntryPoint
+    console.log("📦 Deploying SimpleEntryPoint...");
+    const SimpleEntryPoint = await ethers.getContractFactory("SimpleEntryPoint");
+    const entryPoint = await SimpleEntryPoint.deploy();
+    await entryPoint.waitForDeployment();
+    const entryPointAddress = await entryPoint.getAddress();
+    console.log("   ✅ SimpleEntryPoint:", entryPointAddress);
 
     // 5. Deploy CashAccountFactory
     console.log("📦 Deploying CashAccountFactory...");

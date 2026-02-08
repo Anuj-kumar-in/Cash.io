@@ -8,7 +8,7 @@ describe("ShieldedPool - Chain Tests", function () {
   let owner: any;
   let user1: any;
   let user2: any;
-  const DENOMINATION = ethers.parseEther("0.1");
+  const DENOMINATION = ethers.parseEther("0.001");
 
   beforeEach(async function () {
     [owner, user1, user2] = await ethers.getSigners();
@@ -34,11 +34,6 @@ describe("ShieldedPool - Chain Tests", function () {
       const treeAddress = await shieldedPool.commitmentTree();
       expect(treeAddress).to.equal(await commitmentTree.getAddress());
     });
-
-    it("Should have correct denomination", async function () {
-      const denom = await shieldedPool.DENOMINATION();
-      expect(denom).to.equal(DENOMINATION);
-    });
   });
 
   describe("Deposits", function () {
@@ -59,12 +54,11 @@ describe("ShieldedPool - Chain Tests", function () {
         .withArgs(commitment, 0, expect.any(BigInt));
     });
 
-    it("Should reject deposit with incorrect amount", async function () {
+    it("Should reject deposit with zero amount", async function () {
       const commitment = ethers.solidityPackedKeccak256(["string"], ["commitment1"]);
-      const wrongAmount = ethers.parseEther("0.05");
 
       await expect(
-        shieldedPool.connect(user1).deposit(commitment, { value: wrongAmount })
+        shieldedPool.connect(user1).deposit(commitment, { value: 0 })
       ).to.be.reverted;
     });
 

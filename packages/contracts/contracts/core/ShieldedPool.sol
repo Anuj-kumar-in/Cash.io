@@ -32,7 +32,7 @@ contract ShieldedPool is ReentrancyGuard, Ownable {
     mapping(bytes32 => bool) public roots;
     
     /// @notice Current deposit denomination (fixed for simplicity)
-    uint256 public constant DENOMINATION = 0.1 ether;
+    uint256 public constant DENOMINATION = 0.001 ether;
     
     /// @notice Batch submission data
     struct Batch {
@@ -109,7 +109,7 @@ contract ShieldedPool is ReentrancyGuard, Ownable {
      * @param _commitment The commitment hash of the new note
      */
     function deposit(bytes32 _commitment) external payable nonReentrant {
-        if (msg.value != DENOMINATION) revert InvalidDenomination();
+        require(msg.value > 0, "Deposit amount must be greater than 0");
         
         uint256 leafIndex = commitmentTree.insert(_commitment);
         roots[commitmentTree.getLastRoot()] = true;
@@ -125,6 +125,7 @@ contract ShieldedPool is ReentrancyGuard, Ownable {
      * @param _recipient Address to receive funds
      * @param _relayer Relayer address for fee payment
      * @param _fee Fee amount for relayer
+     * @param _amount Amount to withdraw (verified by ZK proof)
      */
     function withdraw(
         bytes calldata _proof,
@@ -132,18 +133,20 @@ contract ShieldedPool is ReentrancyGuard, Ownable {
         bytes32 _nullifier,
         address payable _recipient,
         address payable _relayer,
-        uint256 _fee
+        uint256 _fee,
+        uint256 _amount
     ) external nonReentrant {
         if (!roots[_root]) revert InvalidRoot();
         if (nullifiers[_nullifier]) revert NullifierAlreadySpent();
         
-        // Verify ZK proof
+        // Verify ZK proof (includes amount verification)
         bytes memory publicInputs = abi.encode(
             _root,
             _nullifier,
             _recipient,
             _relayer,
-            _fee
+            _fee,
+            _amount
         );
         
         if (!zkVerifier.verifyProof(_proof, publicInputs)) {
@@ -153,12 +156,14 @@ contract ShieldedPool is ReentrancyGuard, Ownable {
         // Mark nullifier as spent
         nullifiers[_nullifier] = true;
         
-        // Transfer funds
-        uint256 amount = DENOMINATION - _fee;
-        _recipient.transfer(amount);
+        // Transfer funds using call (safer than transfer which only forwards 2300 gas)
+        uint256 netAmount = _amount - _fee;
+        (bool success, ) = _recipient.call{value: netAmount}("");
+        require(success, "ETH transfer to recipient failed");
         
         if (_fee > 0 && _relayer != address(0)) {
-            _relayer.transfer(_fee);
+            (bool relayerSuccess, ) = _relayer.call{value: _fee}("");
+            require(relayerSuccess, "ETH transfer to relayer failed");
         }
         
         emit Withdrawal(_recipient, _nullifier, _relayer, _fee);

@@ -693,3 +693,27 @@ export {
     ipfsClient,
     DEFAULT_IPFS_GATEWAYS
 } from "./ipfs.js";
+
+// Web3 utilities for frontend use
+export {
+    keccak256,
+    encodePacked,
+    toHex,
+    encodeFunctionData,
+    parseAbi,
+    formatEther,
+    parseEther,
+    isAddress,
+    getAddress,
+    hexToBytes,
+    bytesToHex,
+    generateRandomSecret,
+    serializeWithBigInt,
+    deserializeWithBigInt,
+    ShieldedPoolABI,
+    encodeDepositCall,
+    encodeWithdrawCall,
+    ethers,
+    type Hex,
+    type Address,
+} from "./utils.js";

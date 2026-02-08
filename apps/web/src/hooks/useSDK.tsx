@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { keccak256, encodePacked, toHex } from 'viem';
+import { keccak256, encodePacked, toHex, encodeFunctionData, parseAbi } from 'viem';
 import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi';
 import { supportedChains, type ChainInfo, getChainById } from '../config/chains';
 import { cashSubnet } from '../config/wagmi';
@@ -12,6 +12,7 @@ export interface CashNote {
     blinding: string;
     chainId: number; // Track which chain the note was created on
     createdAt: number;
+    merkleRoot?: string; // The merkle root after this commitment was inserted
 }
 
 export interface DepositResult {
@@ -164,7 +165,58 @@ export function SDKProvider({ children }: SDKProviderProps) {
                     if (key === 'amount') return BigInt(value);
                     return value;
                 });
-                setNotes(parsedNotes);
+                // Deduplicate notes by commitment to prevent duplicate key errors
+                const uniqueNotes = parsedNotes.filter((note, index, self) =>
+                    index === self.findIndex(n => n.commitment === note.commitment)
+                );
+
+                // Verify notes on-chain: remove notes whose nullifier is already spent
+                const shieldedPoolAddress = import.meta.env.VITE_SHIELDED_POOL_ADDRESS as `0x${string}`;
+                let validNotes = uniqueNotes;
+                if (shieldedPoolAddress && publicClient) {
+                    const checks = await Promise.all(
+                        uniqueNotes.map(async (note) => {
+                            try {
+                                const nullifier = keccak256(note.secret as `0x${string}`);
+                                const isSpent = await publicClient.readContract({
+                                    address: shieldedPoolAddress,
+                                    abi: parseAbi(['function isSpent(bytes32 _nullifier) external view returns (bool)']),
+                                    functionName: 'isSpent',
+                                    args: [nullifier],
+                                });
+                                // Also check if the commitment was ever deposited on this contract
+                                const isKnownRoot = note.merkleRoot
+                                    ? await publicClient.readContract({
+                                        address: shieldedPoolAddress,
+                                        abi: parseAbi(['function isKnownRoot(bytes32 _root) external view returns (bool)']),
+                                        functionName: 'isKnownRoot',
+                                        args: [note.merkleRoot as `0x${string}`],
+                                    })
+                                    : false;
+                                return { note, spent: isSpent as boolean, validRoot: isKnownRoot as boolean };
+                            } catch {
+                                // If contract call fails, keep the note but mark it uncertain
+                                return { note, spent: false, validRoot: true };
+                            }
+                        })
+                    );
+                    // Only keep notes that are NOT spent AND have a valid root on the current contract
+                    validNotes = checks
+                        .filter(c => !c.spent && c.validRoot)
+                        .map(c => c.note);
+                }
+
+                setNotes(validNotes);
+                // Save cleaned list back
+                if (validNotes.length !== parsedNotes.length) {
+                    localStorage.setItem(
+                        `cash-notes-${address}`,
+                        JSON.stringify(validNotes, (key, value) => {
+                            if (key === 'amount') return value.toString();
+                            return value;
+                        })
+                    );
+                }
             }
 
             // Load transactions from localStorage
@@ -270,29 +322,43 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 throw new Error('ShieldedPool address not configured. Set VITE_SHIELDED_POOL_ADDRESS in .env');
             }
 
-            // Encode the deposit function call: deposit(bytes32 _commitment)
-            // Function selector: keccak256("deposit(bytes32)")[:4] = 0xb214faa5
-            const depositSelector = '0xb214faa5';
-            const commitmentHex = note.commitment.slice(2).padStart(64, '0');
-            const depositData = depositSelector + commitmentHex;
+            // Encode the deposit function call using viem
+            const depositData = encodeFunctionData({
+                abi: parseAbi(['function deposit(bytes32 _commitment) external payable']),
+                functionName: 'deposit',
+                args: [note.commitment as `0x${string}`],
+            });
 
             // REAL TRANSACTION: Call deposit function on ShieldedPool
-            // Contract requires exactly 0.1 ETH (DENOMINATION)
             const txHash = await walletClient.sendTransaction({
                 to: shieldedPoolAddress,
                 value: amount,
-                data: depositData as `0x${string}`,
+                data: depositData,
+                gas: 500000n,
             });
 
             // Wait for transaction confirmation
             if (publicClient) {
                 await publicClient.waitForTransactionReceipt({ hash: txHash });
+                
+                // Query the current merkle root from the contract after deposit
+                // This root will be needed for withdrawal proof verification
+                const currentMerkleRoot = await publicClient.readContract({
+                    address: shieldedPoolAddress,
+                    abi: [{ name: 'getCurrentRoot', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bytes32' }] }],
+                    functionName: 'getCurrentRoot',
+                });
+                note.merkleRoot = currentMerkleRoot as string;
             }
 
-            // Update local state only after tx confirms
-            const updatedNotes = [...notes, note];
-            setNotes(updatedNotes);
-            saveNotes(updatedNotes);
+            // Update local state only after tx confirms (check for duplicates)
+            let leafIndex = notes.length;
+            if (!notes.some(n => n.commitment === note.commitment)) {
+                const updatedNotes = [...notes, note];
+                setNotes(updatedNotes);
+                saveNotes(updatedNotes);
+                leafIndex = updatedNotes.length - 1;
+            }
 
             // Record transaction
             addTransaction({
@@ -306,7 +372,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
             return {
                 note,
                 commitment: note.commitment,
-                leafIndex: updatedNotes.length - 1,
+                leafIndex,
                 transactionHash: txHash,
                 chainId: effectiveChainId,
             };
@@ -369,46 +435,57 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 throw new Error('ShieldedPool address not configured. Set VITE_SHIELDED_POOL_ADDRESS in .env');
             }
 
-            // PRODUCTION MODE: Call the actual ShieldedPool withdraw function
-            // Function: withdraw(bytes _proof, bytes32 _root, bytes32 _nullifier, address _recipient, address _relayer, uint256 _fee)
-            // Function selector: keccak256("withdraw(bytes,bytes32,bytes32,address,address,uint256)")[:4]
-            const withdrawSelector = '0x21a0affe';
-            
+            // Fetch the merkle root from the contract (or use stored one)
+            let root = note.merkleRoot;
+            if (!root && publicClient) {
+                const currentRoot = await publicClient.readContract({
+                    address: shieldedPoolAddress,
+                    abi: parseAbi(['function getCurrentRoot() external view returns (bytes32)']),
+                    functionName: 'getCurrentRoot',
+                });
+                root = currentRoot as string;
+                // Save it back to the note for future use
+                note.merkleRoot = root;
+                const updatedNotesList = [...notes];
+                updatedNotesList[noteIndex] = note;
+                saveNotes(updatedNotesList);
+            }
+            if (!root) {
+                throw new Error('Unable to fetch merkle root. Please check your network connection.');
+            }
+
             // Create a minimal valid proof (256 bytes for ZK verifier)
             // In testMode, the verifier accepts any proof
-            const proofBytes = '00'.repeat(256);
-            
-            // Use the commitment as root - this was stored when deposit was made
-            // The commitment becomes a valid root after deposit
-            const root = note.commitment;
-            
-            // Relayer and fee (no relayer for direct withdrawal)
-            const relayer = '0x0000000000000000000000000000000000000000';
-            const fee = 0n;
-            
-            // ABI encode the parameters
-            // For dynamic bytes, we need: offset, then static params, then length + data
-            const proofOffset = (6 * 32).toString(16).padStart(64, '0'); // 0xc0 = 192
-            const rootHex = root.slice(2).padStart(64, '0');
-            const nullifierHex = nullifier.slice(2).padStart(64, '0');
-            const recipientHex = recipient.slice(2).toLowerCase().padStart(64, '0');
-            const relayerHex = relayer.slice(2).padStart(64, '0');
-            const feeHex = fee.toString(16).padStart(64, '0');
-            const proofLength = (proofBytes.length / 2).toString(16).padStart(64, '0');
-            
-            const withdrawData = withdrawSelector + 
-                proofOffset + rootHex + nullifierHex + recipientHex + relayerHex + feeHex +
-                proofLength + proofBytes;
-            
+            const proofBytes = ('0x' + '00'.repeat(256)) as `0x${string}`;
+
+            // Encode the withdraw call using viem's encodeFunctionData
+            const withdrawData = encodeFunctionData({
+                abi: parseAbi(['function withdraw(bytes _proof, bytes32 _root, bytes32 _nullifier, address _recipient, address _relayer, uint256 _fee, uint256 _amount) external']),
+                functionName: 'withdraw',
+                args: [
+                    proofBytes,
+                    root as `0x${string}`,
+                    nullifier,
+                    recipient as `0x${string}`,
+                    '0x0000000000000000000000000000000000000000',
+                    0n,
+                    note.amount, // Pass the actual note amount
+                ],
+            });
+
             const txHash = await walletClient.sendTransaction({
                 to: shieldedPoolAddress,
                 value: 0n,
-                data: withdrawData as `0x${string}`,
+                data: withdrawData,
+                gas: 500000n,
             });
 
-            // Wait for transaction confirmation
+            // Wait for transaction confirmation and check status
             if (publicClient) {
-                await publicClient.waitForTransactionReceipt({ hash: txHash });
+                const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+                if (receipt.status === 'reverted') {
+                    throw new Error('Withdraw transaction reverted on-chain. The contract may have rejected the parameters.');
+                }
             }
 
             // Update local state only after tx confirms
@@ -516,6 +593,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 to: shieldedPoolAddress,
                 value: 0n, // No ETH sent, just calling the contract
                 data: `0x${transferData}` as `0x${string}`,
+                gas: 1000000n, // Cap gas to avoid exceeding network limits
             });
 
             // Wait for transaction confirmation
@@ -531,9 +609,12 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 ? outputNotes
                 : [outputNotes[1]]; // Only keep change note
 
-            const updatedNotes = notes
-                .filter(n => !inputCommitments.includes(n.commitment))
-                .concat(notesToKeep);
+            // Filter out spent notes and add new ones (with deduplication)
+            const remainingNotes = notes.filter(n => !inputCommitments.includes(n.commitment));
+            const newUniqueNotes = notesToKeep.filter(newNote =>
+                !remainingNotes.some(n => n.commitment === newNote.commitment)
+            );
+            const updatedNotes = remainingNotes.concat(newUniqueNotes);
 
             setNotes(updatedNotes);
             saveNotes(updatedNotes);
@@ -616,6 +697,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 to: bridgeAddress,
                 value: amount,
                 data: `0x${destChainHex}` as `0x${string}`, // Include destination chain in data
+                gas: 500000n, // Cap gas to avoid exceeding network limits
             });
 
             // Wait for transaction confirmation
@@ -626,9 +708,11 @@ export function SDKProvider({ children }: SDKProviderProps) {
             // If bridging to hub, create a shielded note
             if (destChainId === cashSubnet.id) {
                 const note = await createNote(amount, cashSubnet.id);
-                const updatedNotes = [...notes, note];
-                setNotes(updatedNotes);
-                saveNotes(updatedNotes);
+                if (!notes.some(n => n.commitment === note.commitment)) {
+                    const updatedNotes = [...notes, note];
+                    setNotes(updatedNotes);
+                    saveNotes(updatedNotes);
+                }
             }
 
             // Record transaction
@@ -678,8 +762,11 @@ export function SDKProvider({ children }: SDKProviderProps) {
         return [...notes];
     }, [notes]);
 
-    // Import note
+    // Import note (with duplicate checking)
     const importNote = useCallback((note: CashNote) => {
+        if (notes.some(n => n.commitment === note.commitment)) {
+            return; // Note already exists
+        }
         const updatedNotes = [...notes, note];
         setNotes(updatedNotes);
         saveNotes(updatedNotes);

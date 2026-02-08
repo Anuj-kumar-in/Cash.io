@@ -29,6 +29,7 @@ const config: HardhatUserConfig = {
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || "https://sepolia.infura.io/v3/9a06dc3f8b30448f8c0d3e9b01a24939",
       accounts: process.env.VITE_DEPLOYER_PRIVATE_KEY ? [process.env.VITE_DEPLOYER_PRIVATE_KEY] : [],
+      gas: 15000000, // Stay under Sepolia's 16,777,216 cap
     },
   },
   paths: {

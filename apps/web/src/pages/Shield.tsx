@@ -75,7 +75,7 @@ export default function Shield() {
 
         try {
             if (activeTab === 'shield') {
-                // Shield (deposit)
+                // Shield (deposit) - use user-provided amount
                 const amountWei = parseEther(amount);
                 const result = await deposit(amountWei);
 
@@ -270,32 +270,34 @@ export default function Shield() {
                         {/* Amount Input */}
                         <div>
                             <label className="block text-sm font-medium mb-2">Amount</label>
-                            <div className="relative">
-                                <input
-                                    type="number"
-                                    value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
-                                    placeholder="0.0"
-                                    className="input text-2xl font-mono pr-24"
-                                    step="0.0001"
-                                    min="0"
-                                    max={maxAmount}
-                                    required
-                                    disabled={activeTab === 'unshield'}
-                                />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                    {activeTab === 'shield' && (
-                                        <button
-                                            type="button"
-                                            onClick={handleMaxClick}
-                                            className="px-3 py-1 bg-black text-white text-xs font-semibold rounded-md hover:bg-[var(--color-accent)] transition-colors"
-                                        >
-                                            MAX
-                                        </button>
-                                    )}
-                                    <span className="text-[var(--color-muted)] font-medium">{balance?.symbol || 'ETH'}</span>
+                            {activeTab === 'shield' ? (
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        placeholder="0.0"
+                                        step="0.001"
+                                        min="0.001"
+                                        className="input text-2xl font-mono pr-24"
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                        <span className="text-[var(--color-muted)] font-medium">{balance?.symbol || 'ETH'}</span>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        value={amount}
+                                        className="input text-2xl font-mono pr-24 bg-[var(--color-subtle)] cursor-not-allowed"
+                                        disabled
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                        <span className="text-[var(--color-muted)] font-medium">{balance?.symbol || 'ETH'}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Recipient (for unshield only) */}
@@ -348,7 +350,7 @@ export default function Shield() {
                         {/* Submit Button */}
                         <button
                             type="submit"
-                            disabled={sdkLoading || txStatus === 'pending' || !amount || (activeTab === 'unshield' && (!selectedNote || !recipient))}
+                            disabled={sdkLoading || txStatus === 'pending' || (activeTab === 'unshield' && (!selectedNote || !recipient || !amount))}
                             className="btn btn-primary btn-lg w-full disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {sdkLoading || txStatus === 'pending' ? (
