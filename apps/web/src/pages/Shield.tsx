@@ -13,6 +13,7 @@ import {
     Copy,
     ExternalLink,
     Wallet,
+    Download,
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
 import { WalletModal } from '../components/WalletModal';
@@ -36,6 +37,7 @@ export default function Shield() {
 
     const [txStatus, setTxStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
     const [lastTxHash, setLastTxHash] = useState<string>('');
+    const [createdNote, setCreatedNote] = useState<any>(null);
 
     // Format balance from bigint value
     const formatBalanceValue = (bal: typeof balance) => {
@@ -64,6 +66,19 @@ export default function Shield() {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const downloadNoteFile = (note: any) => {
+        const noteJson = JSON.stringify(note, (_k, v) => typeof v === 'bigint' ? v.toString() : v, 2);
+        const blob = new Blob([noteJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cashio-note-${note.commitment.slice(0, 8)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -81,6 +96,7 @@ export default function Shield() {
 
                 if (result) {
                     setLastTxHash(result.transactionHash);
+                    setCreatedNote(result.note);
                     setTxStatus('success');
                 } else {
                     setTxStatus('error');
@@ -113,6 +129,7 @@ export default function Shield() {
         setSelectedNote('');
         setTxStatus('idle');
         setLastTxHash('');
+        setCreatedNote(null);
     };
 
     // Not connected state
@@ -196,6 +213,24 @@ export default function Shield() {
                                         className="hover:text-[var(--color-muted)] transition-colors"
                                     >
                                         {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                                    </button>
+                                </div>
+                            )}
+                            {activeTab === 'shield' && createdNote && (
+                                <div className="p-4 bg-[var(--color-success)]/10 rounded-xl border border-[var(--color-success)]/20 text-left w-full max-w-md">
+                                    <div className="flex items-center gap-2 mb-2 text-[var(--color-success)]">
+                                        <ShieldIcon size={18} />
+                                        <span className="font-bold text-sm">Your Shielded Note</span>
+                                    </div>
+                                    <p className="text-xs text-[var(--color-muted)] mb-3">
+                                        Download this note file to backup your shielded assets. You'll need this to recover your funds.
+                                    </p>
+                                    <button
+                                        onClick={() => downloadNoteFile(createdNote)}
+                                        className="btn btn-primary w-full"
+                                    >
+                                        <Download size={16} className="mr-2" />
+                                        Download Note File
                                     </button>
                                 </div>
                             )}

@@ -4,6 +4,7 @@ import { WagmiProvider } from 'wagmi';
 import { config } from './config/wagmi';
 import { SDKProvider } from './hooks/useSDK';
 import { ThemeProvider } from './hooks/useTheme';
+import { NetworkModeProvider } from './hooks/useNetworkMode';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
@@ -27,8 +28,9 @@ function App() {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <SDKProvider>
-            <BrowserRouter>
+          <NetworkModeProvider>
+            <SDKProvider>
+              <BrowserRouter>
               <div className="noise-overlay" />
               <Routes>
                 {/* Public Landing Page */}
@@ -59,6 +61,7 @@ function App() {
               </Routes>
             </BrowserRouter>
           </SDKProvider>
+        </NetworkModeProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>

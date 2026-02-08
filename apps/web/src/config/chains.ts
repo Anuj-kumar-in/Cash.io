@@ -256,3 +256,11 @@ export const getBitcoinChains = (): ChainInfo[] => {
 export const getSolanaChains = (): ChainInfo[] => {
     return supportedChains.filter(chain => chain.category === 'solana');
 };
+
+export const getChainsByNetworkMode = (isTestnet: boolean): ChainInfo[] => {
+    return supportedChains.filter(chain => chain.isTestnet === isTestnet);
+};
+
+export const getChainsByCategoryAndMode = (category: ChainCategory, isTestnet: boolean): ChainInfo[] => {
+    return supportedChains.filter(chain => chain.category === category && chain.isTestnet === isTestnet);
+};

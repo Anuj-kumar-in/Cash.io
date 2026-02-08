@@ -12,10 +12,13 @@ import {
     ExternalLink,
     Sun,
     Moon,
+    FlaskConical,
+    Rocket,
 } from 'lucide-react';
 import { WalletButton } from './WalletModal';
 import { useSDK } from '../hooks/useSDK';
 import { useTheme } from '../hooks/useTheme';
+import { useNetworkMode } from '../hooks/useNetworkMode';
 import { getChainById } from '../config/chains';
 
 const navigation = [
@@ -33,6 +36,7 @@ export default function Layout() {
     const chainId = useChainId();
     const { isLoading: sdkLoading } = useSDK();
     const { isDark, toggleTheme } = useTheme();
+    const { networkMode, toggleNetworkMode, isTestnet } = useNetworkMode();
 
     const currentChain = getChainById(chainId);
 
@@ -79,6 +83,23 @@ export default function Layout() {
                             {sdkLoading && (
                                 <div className="w-2 h-2 bg-[var(--color-warning)] rounded-full animate-pulse" />
                             )}
+
+                            {/* Network Mode Toggle */}
+                            <button
+                                onClick={toggleNetworkMode}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    isTestnet 
+                                        ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20' 
+                                        : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                                }`}
+                                title={`Switch to ${isTestnet ? 'Mainnet' : 'Testnet'}`}
+                            >
+                                {isTestnet ? (
+                                    <><FlaskConical size={16} /> Testnet</>
+                                ) : (
+                                    <><Rocket size={16} /> Mainnet</>
+                                )}
+                            </button>
 
                             {/* Theme Toggle */}
                             <button

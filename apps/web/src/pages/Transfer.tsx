@@ -13,6 +13,7 @@ import {
     QrCode,
     Wallet,
     AlertCircle,
+    Download,
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
 import { WalletModal } from '../components/WalletModal';
@@ -37,6 +38,19 @@ export default function Transfer() {
         navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const downloadNoteFile = (note: any) => {
+        const noteJson = JSON.stringify(note, (_k, v) => typeof v === 'bigint' ? v.toString() : v, 2);
+        const blob = new Blob([noteJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cashio-note-${note.commitment.slice(0, 8)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -204,10 +218,17 @@ export default function Transfer() {
                                             {JSON.stringify(recipientNote, (k, v) => typeof v === 'bigint' ? v.toString() : v).slice(0, 50)}...
                                         </div>
                                         <button
+                                            onClick={() => downloadNoteFile(recipientNote)}
+                                            className="btn btn-primary btn-sm h-8"
+                                        >
+                                            <Download size={14} className="mr-1" />
+                                            Download
+                                        </button>
+                                        <button
                                             onClick={() => handleCopy(JSON.stringify(recipientNote, (k, v) => typeof v === 'bigint' ? v.toString() : v))}
                                             className="btn btn-secondary btn-sm h-8"
                                         >
-                                            {copied ? 'Copied!' : 'Copy Note'}
+                                            {copied ? 'Copied!' : 'Copy'}
                                         </button>
                                     </div>
                                     <p className="text-[10px] text-[var(--color-muted)] mt-2 italic">

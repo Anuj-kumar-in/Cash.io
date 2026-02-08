@@ -44,6 +44,7 @@ export interface BridgeResult {
     amount: bigint;
     transactionHash: string;
     estimatedTime: number; // in seconds
+    note?: CashNote; // The created note for claiming on hub chain
 }
 
 export interface Transaction {
@@ -75,6 +76,7 @@ interface SDKContextType {
     transfer: (inputCommitments: [string, string], outputAmounts: [bigint, bigint], recipient?: string) => Promise<TransferResult | null>;
     bridge: (sourceChainId: number, destChainId: number, amount: bigint) => Promise<BridgeResult | null>;
     refreshBalance: () => Promise<void>;
+    refreshData: () => Promise<void>;
     exportNotes: () => CashNote[];
     importNote: (note: CashNote) => void;
 
@@ -165,9 +167,9 @@ export function SDKProvider({ children }: SDKProviderProps) {
                     if (key === 'amount') return BigInt(value);
                     return value;
                 });
-                // Deduplicate notes by commitment to prevent duplicate key errors
+                // Deduplicate notes by commitment and filter out zero-amount notes
                 const uniqueNotes = parsedNotes.filter((note, index, self) =>
-                    index === self.findIndex(n => n.commitment === note.commitment)
+                    index === self.findIndex(n => n.commitment === note.commitment) && note.amount > 0n
                 );
 
                 // Verify notes on-chain: remove notes whose nullifier is already spent
@@ -251,12 +253,13 @@ export function SDKProvider({ children }: SDKProviderProps) {
         setChainBalances(perChain);
     }, [notes]);
 
-    // Save notes to localStorage
+    // Save notes to localStorage (filter out zero-amount notes)
     const saveNotes = useCallback((updatedNotes: CashNote[]) => {
         if (address) {
+            const nonZeroNotes = updatedNotes.filter(n => n.amount > 0n);
             localStorage.setItem(
                 `cash-notes-${address}`,
-                JSON.stringify(updatedNotes, (key, value) => {
+                JSON.stringify(nonZeroNotes, (key, value) => {
                     if (key === 'amount') return value.toString();
                     return value;
                 })
@@ -685,34 +688,43 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 throw new Error('Bridge not supported for this chain pair');
             }
 
-            // Get the bridge address from environment or use a fallback
-            const bridgeAddress = import.meta.env.VITE_ETH_BRIDGE_ADDRESS as `0x${string}` || address;
+            // Get the bridge address from environment
+            const bridgeAddress = import.meta.env.VITE_ETH_BRIDGE_ADDRESS as `0x${string}`;
+            if (!bridgeAddress) {
+                throw new Error('Bridge address not configured');
+            }
 
-            // Encode destination chain ID in the data field
-            const destChainHex = destChainId.toString(16).padStart(8, '0');
+            // Create a note for the destination (hub) chain
+            const note = await createNote(amount, destChainId);
 
-            // REAL TRANSACTION: Send ETH to the bridge contract
-            // This will trigger MetaMask confirmation!
+            // Encode the deposit function call: deposit(bytes32 commitment)
+            const depositData = encodeFunctionData({
+                abi: parseAbi(['function deposit(bytes32 commitment) external payable']),
+                functionName: 'deposit',
+                args: [note.commitment as `0x${string}`],
+            });
+
+            // Call the bridge deposit function with ETH value
             const txHash = await walletClient.sendTransaction({
                 to: bridgeAddress,
                 value: amount,
-                data: `0x${destChainHex}` as `0x${string}`, // Include destination chain in data
-                gas: 500000n, // Cap gas to avoid exceeding network limits
+                data: depositData,
+                gas: 200000n,
             });
 
             // Wait for transaction confirmation
             if (publicClient) {
-                await publicClient.waitForTransactionReceipt({ hash: txHash });
+                const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+                if (receipt.status === 'reverted') {
+                    throw new Error('Bridge transaction reverted');
+                }
             }
 
-            // If bridging to hub, create a shielded note
-            if (destChainId === cashSubnet.id) {
-                const note = await createNote(amount, cashSubnet.id);
-                if (!notes.some(n => n.commitment === note.commitment)) {
-                    const updatedNotes = [...notes, note];
-                    setNotes(updatedNotes);
-                    saveNotes(updatedNotes);
-                }
+            // Save the note locally (it will be claimable on hub chain)
+            if (!notes.some(n => n.commitment === note.commitment)) {
+                const updatedNotes = [...notes, note];
+                setNotes(updatedNotes);
+                saveNotes(updatedNotes);
             }
 
             // Record transaction
@@ -737,6 +749,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 amount,
                 transactionHash: txHash,
                 estimatedTime,
+                note, // Return the created note so user can back it up
             };
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bridge failed';
@@ -750,12 +763,19 @@ export function SDKProvider({ children }: SDKProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    }, [walletClient, walletClientLoading, isConnected, publicClient, address, notes, saveNotes]);
+    }, [walletClient, walletClientLoading, isConnected, publicClient, address, notes, saveNotes, createNote, addTransaction]);
 
     // Refresh balance
     const refreshBalance = useCallback(async () => {
         calculateBalances();
     }, [calculateBalances]);
+
+    // Refresh all data (re-fetch notes from localStorage and validate on-chain)
+    const refreshData = useCallback(async () => {
+        if (isConnected && address) {
+            await initializeSDK();
+        }
+    }, [isConnected, address]);
 
     // Export notes
     const exportNotes = useCallback(() => {
@@ -801,6 +821,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
         transfer,
         bridge,
         refreshBalance,
+        refreshData,
         exportNotes,
         importNote,
         getSupportedChains,

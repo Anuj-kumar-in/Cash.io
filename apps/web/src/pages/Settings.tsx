@@ -76,15 +76,23 @@ export default function Settings() {
             if (file) {
                 const text = await file.text();
                 try {
-                    const importedNotes = JSON.parse(text, (key, value) => {
+                    const importedData = JSON.parse(text, (key, value) => {
                         if (key === 'amount') return BigInt(value);
                         return value;
                     });
-                    importedNotes.forEach((note: any) => importNote(note));
-                    setSuccessMessage(`Imported ${importedNotes.length} notes!`);
+                    // Handle both single note and array of notes
+                    if (Array.isArray(importedData)) {
+                        importedData.forEach((note: any) => importNote(note));
+                        setSuccessMessage(`Imported ${importedData.length} notes!`);
+                    } else {
+                        importNote(importedData);
+                        setSuccessMessage('Note imported successfully!');
+                    }
                     setTimeout(() => setSuccessMessage(null), 3000);
                 } catch (err) {
                     console.error('Failed to import notes:', err);
+                    setSuccessMessage('Invalid note format');
+                    setTimeout(() => setSuccessMessage(null), 3000);
                 }
             }
         };

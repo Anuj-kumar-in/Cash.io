@@ -22,6 +22,7 @@ import {
     RefreshCw,
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
+import { useNetworkMode } from '../hooks/useNetworkMode';
 import { WalletModal } from '../components/WalletModal';
 import { supportedChains, getChainById, type ChainInfo } from '../config/chains';
 import { cashSubnet } from '../config/wagmi';
@@ -37,12 +38,13 @@ export default function Dashboard() {
         chainBalances,
         isInitialized,
         isLoading,
-        refreshBalance,
+        refreshData,
         getSupportedChains
     } = useSDK();
 
     const [hideBalances, setHideBalances] = useState(false);
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+    const { isTestnet } = useNetworkMode();
 
     const currentChain = getChainById(chainId);
     // Guard against NaN by checking shieldedBalance is valid bigint
@@ -57,12 +59,11 @@ export default function Dashboard() {
         time: new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     })).slice(0, 5); // Show last 5
 
-    // Chain stats
+    // Chain stats based on network mode
     const chainCategories = [
-        { name: 'EVM Chains', count: supportedChains.filter(c => c.category === 'evm' && !c.isTestnet).length, icon: '⟠' },
-        { name: 'Bitcoin L2s', count: supportedChains.filter(c => c.category === 'bitcoin' && !c.isTestnet).length, icon: '🟠' },
-        { name: 'Solana', count: 1, icon: '◎' },
-        { name: 'Testnets', count: supportedChains.filter(c => c.isTestnet).length, icon: '🧪' },
+        { name: 'EVM Chains', count: supportedChains.filter(c => c.category === 'evm' && c.isTestnet === isTestnet).length, icon: '⟠' },
+        { name: 'Bitcoin L2s', count: supportedChains.filter(c => c.category === 'bitcoin' && c.isTestnet === isTestnet).length, icon: '🟠' },
+        { name: 'Solana', count: supportedChains.filter(c => c.category === 'solana' && c.isTestnet === isTestnet).length, icon: '◎' },
     ];
 
     // Not connected state
@@ -113,9 +114,10 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => refreshBalance()}
+                        onClick={() => refreshData()}
                         disabled={isLoading}
                         className="btn btn-secondary btn-sm"
+                        title="Refresh data"
                     >
                         <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
                     </button>
@@ -262,7 +264,7 @@ export default function Dashboard() {
                 </div>
                 {/* Popular chain icons */}
                 <div className="flex items-center justify-center gap-4 mt-4 flex-wrap">
-                    {supportedChains.filter(c => !c.isTestnet).slice(0, 12).map(chain => (
+                    {supportedChains.filter(c => c.isTestnet === isTestnet).slice(0, 12).map(chain => (
                         <div
                             key={chain.id}
                             className="w-10 h-10 bg-[var(--color-subtle)] rounded-full flex items-center justify-center text-xl hover:bg-[var(--color-border)] transition-colors cursor-pointer"
@@ -271,9 +273,11 @@ export default function Dashboard() {
                             {chain.icon}
                         </div>
                     ))}
-                    <div className="w-10 h-10 bg-[var(--color-subtle)] rounded-full flex items-center justify-center text-xs font-bold text-[var(--color-muted)]">
-                        +{supportedChains.filter(c => !c.isTestnet).length - 12}
-                    </div>
+                    {supportedChains.filter(c => c.isTestnet === isTestnet).length > 12 && (
+                        <div className="w-10 h-10 bg-[var(--color-subtle)] rounded-full flex items-center justify-center text-xs font-bold text-[var(--color-muted)]">
+                            +{supportedChains.filter(c => c.isTestnet === isTestnet).length - 12}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -337,7 +341,7 @@ export default function Dashboard() {
                     { label: 'Total Privacy Pool', value: '$12.4M', icon: Lock },
                     { label: 'Active Users', value: '2,341', icon: TrendingUp },
                     { label: 'Transactions Today', value: '523', icon: Zap },
-                    { label: 'Supported Chains', value: supportedChains.length.toString(), icon: Globe },
+                    { label: 'Supported Chains', value: supportedChains.filter(c => c.isTestnet === isTestnet).length.toString(), icon: Globe },
                 ].map((stat) => (
                     <div key={stat.label} className="card text-center">
                         <stat.icon size={20} className="mx-auto text-[var(--color-muted)]" />

@@ -17,8 +17,10 @@ import {
     Search,
     Filter,
     Bitcoin,
+    Download,
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
+import { useNetworkMode } from '../hooks/useNetworkMode';
 import { WalletModal } from '../components/WalletModal';
 import { supportedChains, type ChainInfo, getChainById, type ChainCategory } from '../config/chains';
 import { cashSubnet } from '../config/wagmi';
@@ -29,6 +31,7 @@ export default function Bridge() {
     const chainId = useChainId();
     const { switchChain, isPending: isSwitching } = useSwitchChain();
     const { bridge, deposit, isLoading: sdkLoading, error: sdkError } = useSDK();
+    const { isTestnet } = useNetworkMode();
 
     const [sourceChain, setSourceChain] = useState<ChainInfo | null>(null);
     const [destChain, setDestChain] = useState<ChainInfo | null>(() =>
@@ -40,10 +43,10 @@ export default function Bridge() {
     const [showDestDropdown, setShowDestDropdown] = useState(false);
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
     const [lastTxHash, setLastTxHash] = useState('');
+    const [bridgedNote, setBridgedNote] = useState<any>(null);
     const [copied, setCopied] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState<ChainCategory | 'all'>('all');
-    const [showTestnets, setShowTestnets] = useState(false);
 
     // Set source chain based on connected network
     useMemo(() => {
@@ -56,7 +59,8 @@ export default function Bridge() {
     // Filtered chains for dropdown
     const filteredChains = useMemo(() => {
         return supportedChains.filter(chain => {
-            if (!showTestnets && chain.isTestnet) return false;
+            // Filter by network mode (testnet/mainnet)
+            if (chain.isTestnet !== isTestnet) return false;
             if (categoryFilter !== 'all' && chain.category !== categoryFilter) return false;
             if (searchQuery) {
                 const query = searchQuery.toLowerCase();
@@ -65,7 +69,7 @@ export default function Bridge() {
             }
             return true;
         });
-    }, [showTestnets, categoryFilter, searchQuery]);
+    }, [isTestnet, categoryFilter, searchQuery]);
 
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -95,6 +99,7 @@ export default function Bridge() {
 
             if (result) {
                 setLastTxHash(result.transactionHash);
+                setBridgedNote(result.note);
                 setTxStatus('success');
             } else {
                 setTxStatus('idle');
@@ -109,6 +114,20 @@ export default function Bridge() {
         setAmount('');
         setTxStatus('idle');
         setLastTxHash('');
+        setBridgedNote(null);
+    };
+
+    const downloadNoteFile = (note: any) => {
+        const noteJson = JSON.stringify(note, (_k, v) => typeof v === 'bigint' ? v.toString() : v, 2);
+        const blob = new Blob([noteJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cashio-bridge-note-${note.commitment.slice(0, 8)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     const getEstimatedTime = () => {
@@ -187,16 +206,6 @@ export default function Bridge() {
                                     {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
                                 </button>
                             ))}
-                            <button
-                                type="button"
-                                onClick={() => setShowTestnets(!showTestnets)}
-                                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${showTestnets
-                                    ? 'bg-[var(--color-warning)] text-white'
-                                    : 'bg-[var(--color-subtle)] hover:bg-[var(--color-border)]'
-                                    }`}
-                            >
-                                Testnets
-                            </button>
                         </div>
                     </div>
 
@@ -286,9 +295,9 @@ export default function Bridge() {
             {/* Chain Categories */}
             <div className="grid grid-cols-4 gap-3">
                 {[
-                    { icon: '⟠', label: 'EVM Chains', count: supportedChains.filter(c => c.category === 'evm').length },
-                    { icon: '🟠', label: 'Bitcoin L2s', count: supportedChains.filter(c => c.category === 'bitcoin').length },
-                    { icon: '◎', label: 'Solana', count: supportedChains.filter(c => c.category === 'solana').length },
+                    { icon: '⟠', label: 'EVM Chains', count: supportedChains.filter(c => c.category === 'evm' && c.isTestnet === isTestnet).length },
+                    { icon: '🟠', label: 'Bitcoin L2s', count: supportedChains.filter(c => c.category === 'bitcoin' && c.isTestnet === isTestnet).length },
+                    { icon: '◎', label: 'Solana', count: supportedChains.filter(c => c.category === 'solana' && c.isTestnet === isTestnet).length },
                     { icon: '💰', label: 'Cash.io Hub', count: 1 },
                 ].map((cat, i) => (
                     <div key={i} className="card text-center py-4">
@@ -339,6 +348,25 @@ export default function Bridge() {
                                 <span>{lastTxHash.slice(0, 10)}...{lastTxHash.slice(-6)}</span>
                                 <button onClick={() => handleCopy(lastTxHash)}>
                                     {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                                </button>
+                            </div>
+                        )}
+
+                        {bridgedNote && (
+                            <div className="p-4 bg-[var(--color-success)]/10 rounded-xl border border-[var(--color-success)]/20 text-left max-w-sm mx-auto mb-6">
+                                <div className="flex items-center gap-2 mb-2 text-[var(--color-success)]">
+                                    <Shield size={18} />
+                                    <span className="font-bold text-sm">Shielded Note Created</span>
+                                </div>
+                                <p className="text-xs text-[var(--color-muted)] mb-3">
+                                    Your bridged assets are now shielded. Download this note to backup and access your funds.
+                                </p>
+                                <button
+                                    onClick={() => downloadNoteFile(bridgedNote)}
+                                    className="btn btn-primary w-full"
+                                >
+                                    <Download size={16} className="mr-2" />
+                                    Download Note File
                                 </button>
                             </div>
                         )}
@@ -526,7 +554,7 @@ export default function Bridge() {
             <div>
                 <h3 className="font-bold mb-4">Supported Networks</h3>
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                    {supportedChains.filter(c => !c.isTestnet).slice(0, 16).map((chain) => (
+                    {supportedChains.filter(c => c.isTestnet === isTestnet).slice(0, 16).map((chain) => (
                         <div
                             key={chain.id}
                             className="flex flex-col items-center p-2 bg-[var(--color-subtle)] rounded-lg hover:bg-[var(--color-border)] transition-colors"
@@ -538,10 +566,12 @@ export default function Bridge() {
                             </span>
                         </div>
                     ))}
-                    <div className="flex flex-col items-center justify-center p-2 bg-[var(--color-subtle)] rounded-lg">
-                        <span className="text-sm font-bold text-[var(--color-muted)]">+{supportedChains.filter(c => !c.isTestnet).length - 16}</span>
-                        <span className="text-[10px] text-[var(--color-muted)]">more</span>
-                    </div>
+                    {supportedChains.filter(c => c.isTestnet === isTestnet).length > 16 && (
+                        <div className="flex flex-col items-center justify-center p-2 bg-[var(--color-subtle)] rounded-lg">
+                            <span className="text-sm font-bold text-[var(--color-muted)]">+{supportedChains.filter(c => c.isTestnet === isTestnet).length - 16}</span>
+                            <span className="text-[10px] text-[var(--color-muted)]">more</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
