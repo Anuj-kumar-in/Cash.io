@@ -3,7 +3,7 @@
   "framework": "vite",
   "buildCommand": "cd apps/web && npm run build:prod",
   "outputDirectory": "apps/web/dist",
-  "installCommand": "npm install -g pnpm && pnpm install",
+  "installCommand": "npm install",
   "devCommand": "cd apps/web && npm run dev",
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }

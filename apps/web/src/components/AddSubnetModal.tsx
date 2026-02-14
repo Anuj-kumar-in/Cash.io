@@ -65,11 +65,11 @@ export function AddSubnetModal({ isOpen, onClose }: AddSubnetModalProps) {
         try {
             await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
-                params: [subnetConfig],
+                params: [SUBNET_CONFIG],
             });
 
             // Try to fund with test tokens (this would need to be implemented)
-            alert(`🎉 ${subnetConfig.chainName} added successfully! You may need ${subnetConfig.nativeCurrency.symbol} tokens for transactions.`);
+            alert(`🎉 ${SUBNET_CONFIG.chainName} added successfully! You may need ${SUBNET_CONFIG.nativeCurrency.symbol} tokens for transactions.`);
             onClose();
         } catch (error: any) {
             console.error('Failed to add subnet:', error);
@@ -121,8 +121,8 @@ export function AddSubnetModal({ isOpen, onClose }: AddSubnetModalProps) {
                 {/* Info */}
                 <div className="mb-6">
                     <div className={`border rounded-lg p-4 mb-4 ${isTestnet
-                            ? 'bg-amber-50 border-amber-200'
-                            : 'bg-purple-50 border-purple-200'
+                        ? 'bg-amber-50 border-amber-200'
+                        : 'bg-purple-50 border-purple-200'
                         }`}>
                         <div className="flex items-center gap-2 mb-2">
                             <span className="text-2xl">{isTestnet ? '🧪' : '💰'}</span>
@@ -174,8 +174,8 @@ export function AddSubnetModal({ isOpen, onClose }: AddSubnetModalProps) {
                         onClick={addSubnetToMetaMask}
                         disabled={isAdding}
                         className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${isAdding
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'bg-purple-600 hover:bg-purple-700 text-white'
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-purple-600 hover:bg-purple-700 text-white'
                             }`}
                     >
                         {isAdding ? (
@@ -192,7 +192,7 @@ export function AddSubnetModal({ isOpen, onClose }: AddSubnetModalProps) {
                     </button>
 
                     <div className="text-xs text-gray-500 text-center">
-                        <p>⚠️ You'll need {subnetConfig.nativeCurrency.symbol} tokens for gas fees on the subnet</p>
+                        <p>⚠️ You'll need {SUBNET_CONFIG.nativeCurrency.symbol} tokens for gas fees on the subnet</p>
                         <p>Contact the team for test tokens if needed</p>
                     </div>
                 </div>
@@ -207,7 +207,7 @@ export function AddSubnetModal({ isOpen, onClose }: AddSubnetModalProps) {
                         <p>2. Click "Add network" → "Add a network manually"</p>
                         <p>3. Fill in the network details above</p>
                         <p>4. Save and switch to the Cash.io Subnet</p>
-                        <p>5. Import the account with {subnetConfig.nativeCurrency.symbol} tokens if needed</p>
+                        <p>5. Import the account with {SUBNET_CONFIG.nativeCurrency.symbol} tokens if needed</p>
                     </div>
                 </details>
             </div>
