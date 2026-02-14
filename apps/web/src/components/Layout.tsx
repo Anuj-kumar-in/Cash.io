@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import {
@@ -49,16 +49,12 @@ export default function Layout() {
             {/* Header */}
             <header className="fixed top-0 left-0 right-0 z-40 glass">
                 <div className="container-app">
-                    <div className="flex items-center justify-between h-16">
+                    <div className="flex items-center justify-between h-20">
                         {/* Logo */}
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[var(--color-primary)] rounded-lg flex items-center justify-center">
-                                <span className="text-[var(--color-secondary)] font-bold text-xl">C</span>
-                            </div>
-                            <div>
-                                <h1 className="text-lg font-bold tracking-tight text-[var(--color-primary)]">CASH.IO</h1>
-                                <p className="text-xs text-[var(--color-muted)] -mt-1">Private Finance Protocol</p>
-                            </div>
+                        <div className="flex items-center flex-shrink-0">
+                            <Link to="/" className="flex items-center flex-shrink-0">
+                                <img src="/logo.webp" alt="Cash.io Logo" className="h-8 md:h-10 w-auto object-contain" />
+                            </Link>
                         </div>
 
                         {/* Desktop Navigation */}
@@ -82,7 +78,7 @@ export default function Layout() {
                         </nav>
 
                         {/* Right Side Controls */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                             {/* SDK Loading Indicator */}
                             {sdkLoading && (
                                 <div className="w-2 h-2 bg-[var(--color-warning)] rounded-full animate-pulse" />
@@ -92,8 +88,8 @@ export default function Layout() {
                             <button
                                 onClick={() => setSubnetModalOpen(true)}
                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${isTestnet
-                                        ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
-                                        : 'bg-purple-500/10 text-purple-600 hover:bg-purple-500/20'
+                                    ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
+                                    : 'bg-purple-500/10 text-purple-600 hover:bg-purple-500/20'
                                     }`}
                                 title={`Click to add Cash.io ${isTestnet ? 'Testnet' : 'Hub'} to MetaMask`}
                             >
@@ -107,8 +103,8 @@ export default function Layout() {
                             <button
                                 onClick={toggleNetworkMode}
                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${isTestnet
-                                        ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
-                                        : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                                    ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
+                                    : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
                                     }`}
                                 title={`Switch to ${isTestnet ? 'Mainnet' : 'Testnet'}`}
                             >
@@ -168,7 +164,7 @@ export default function Layout() {
             </header>
 
             {/* Main Content */}
-            <main className="pt-20 pb-12">
+            <main className="pt-24 pb-12">
                 <div className="container-app">
                     <Outlet />
                 </div>

@@ -148,12 +148,9 @@ export default function Landing() {
             {/* Navigation */}
             <nav className="fixed top-0 left-0 right-0 z-40 bg-[var(--color-secondary)]/80 backdrop-blur-md border-b border-[var(--color-border)] transition-colors">
                 <div className="container-app">
-                    <div className="flex items-center justify-between h-16 md:h-20">
-                        <Link to="/" className="flex items-center gap-2 md:gap-3">
-                            <div className="w-8 h-8 md:w-10 md:h-10 bg-[var(--color-primary)] rounded-lg flex items-center justify-center">
-                                <span className="text-[var(--color-secondary)] font-bold text-sm md:text-lg">C</span>
-                            </div>
-                            <span className="font-bold text-lg md:text-xl text-[var(--color-primary)]">Cash.io</span>
+                    <div className="flex items-center justify-between h-20 md:h-24">
+                        <Link to="/" className="flex items-center flex-shrink-0">
+                            <img src="/logo.webp" alt="Cash.io" className="h-8 md:h-10 w-auto object-contain" />
                         </Link>
 
                         <div className="hidden lg:flex items-center gap-8">
@@ -166,7 +163,7 @@ export default function Landing() {
                             </a>
                         </div>
 
-                        <div className="flex items-center gap-2 md:gap-3">
+                        <div className="flex items-center gap-4">
                             {/* Theme Toggle */}
                             <button
                                 onClick={toggleTheme}
@@ -194,7 +191,7 @@ export default function Landing() {
             </nav>
 
             {/* Hero Section */}
-            <section className="relative min-h-screen flex items-center pt-20 md:pt-24 overflow-hidden">
+            <section className="relative min-h-screen flex items-center pt-24 md:pt-28 overflow-hidden">
                 {/* Background Grid */}
                 <div className="absolute inset-0 bg-grid opacity-50" style={{ transform: `translateY(${scrollY * 0.1}px)` }} />
 
@@ -575,11 +572,8 @@ export default function Landing() {
                 <div className="container-app px-4 md:px-0">
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
                         <div>
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="w-8 h-8 bg-[var(--color-primary)] rounded-lg flex items-center justify-center">
-                                    <span className="text-[var(--color-secondary)] font-bold text-sm">C</span>
-                                </div>
-                                <span className="font-bold text-xl text-[var(--color-primary)]">Cash.io</span>
+                            <div className="flex items-center mb-4 flex-shrink-0">
+                                <img src="/logo.webp" alt="Cash.io" className="h-8 w-auto object-contain" />
                             </div>
                             <p className="text-sm text-[var(--color-muted)] mb-4">
                                 Privacy-first multi-chain transactions powered by zero-knowledge proofs.
