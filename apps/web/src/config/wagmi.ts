@@ -379,22 +379,5 @@ export const contractAddresses: Record<number, {
     [core.id]: { bridge: import.meta.env.VITE_CORE_BRIDGE_ADDRESS },
 };
 
-// Helper to get contracts for current chain
-export function getContractsForChain(chainId: number) {
-    return contractAddresses[chainId] || {};
-}
-
-// Check if bridge is deployed on chain
-export function isBridgeDeployed(chainId: number): boolean {
-    const contracts = getContractsForChain(chainId);
-    return !!contracts.bridge && contracts.bridge !== '0x...';
-}
-
-// Get all chains with deployed bridges
-export function getChainsWithBridge(): number[] {
-    return Object.entries(contractAddresses)
-        .filter(([_, contracts]) => contracts.bridge && contracts.bridge !== '0x...')
-        .map(([chainId]) => parseInt(chainId));
-}
 
 

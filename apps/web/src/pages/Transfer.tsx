@@ -216,7 +216,7 @@ export default function Transfer() {
                                     </p>
                                     <div className="flex items-center gap-2 bg-[var(--color-subtle)] p-3 rounded-lg font-mono text-[10px] break-all border border-black/5">
                                         <div className="flex-1 opacity-60">
-                                            {JSON.stringify(recipientNote, (k, v) => typeof v === 'bigint' ? v.toString() : v).slice(0, 50)}...
+                                            {JSON.stringify(recipientNote, (_k, v) => typeof v === 'bigint' ? v.toString() : v).slice(0, 50)}...
                                         </div>
                                         <button
                                             onClick={() => downloadNoteFile(recipientNote)}
@@ -226,7 +226,7 @@ export default function Transfer() {
                                             Download
                                         </button>
                                         <button
-                                            onClick={() => handleCopy(JSON.stringify(recipientNote, (k, v) => typeof v === 'bigint' ? v.toString() : v))}
+                                            onClick={() => handleCopy(JSON.stringify(recipientNote, (_k, v) => typeof v === 'bigint' ? v.toString() : v))}
                                             className="btn btn-secondary btn-sm h-8"
                                         >
                                             {copied ? 'Copied!' : 'Copy'}
