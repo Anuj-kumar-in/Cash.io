@@ -104,3 +104,4 @@ temp/
 .DS_Store
 .env.apple-developer-domain-association.development
 .env.apple-developer-domain-association.production
+session-variables.json

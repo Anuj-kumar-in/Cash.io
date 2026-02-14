@@ -29,17 +29,17 @@ const config: HardhatUserConfig = {
     cashiosubnet: {
       url: "http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc",
       chainId: 4102,
-      accounts: ["56289e99c94b6912bfc12adc093c9b51124f0dc54ac7a766b2bc5ccf558d8027"],
+      accounts: process.env.VITE_DEPLOYER_PRIVATE_KEY ? [process.env.VITE_DEPLOYER_PRIVATE_KEY] : [],
       gas: 30000000, // 30M gas limit for subnet
     },
     cashiosepolia: {
       url: "http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc",
       chainId: 41021,
-      accounts: ["56289e99c94b6912bfc12adc093c9b51124f0dc54ac7a766b2bc5ccf558d8027"],
+      accounts: process.env.VITE_DEPLOYER_PRIVATE_KEY ? [process.env.VITE_DEPLOYER_PRIVATE_KEY] : [],
       gas: 30000000, // 30M gas limit for subnet
     },
     sepolia: {
-      url: process.env.SEPOLIA_RPC_URL || "https://sepolia.infura.io/v3/9a06dc3f8b30448f8c0d3e9b01a24939",
+      url: process.env.SEPOLIA_RPC_URL || `https://sepolia.infura.io/v3/${process.env.INFURA_ID || "9a06dc3f8b30448f8c0d3e9b01a24939"}`,
       accounts: process.env.VITE_DEPLOYER_PRIVATE_KEY ? [process.env.VITE_DEPLOYER_PRIVATE_KEY] : [],
       gas: 15000000, // Stay under Sepolia's 16,777,216 cap
     },
@@ -50,22 +50,22 @@ const config: HardhatUserConfig = {
       gas: 6800000,
     },
     arbitrumSepolia: {
-      url: process.env.ARBITRUM_SEPOLIA_RPC_URL || "https://arbitrum-sepolia.infura.io/v3/9a06dc3f8b30448f8c0d3e9b01a24939",
+      url: process.env.ARBITRUM_SEPOLIA_RPC_URL || `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_ID || "9a06dc3f8b30448f8c0d3e9b01a24939"}`,
       accounts: process.env.VITE_DEPLOYER_PRIVATE_KEY ? [process.env.VITE_DEPLOYER_PRIVATE_KEY] : [],
       chainId: 421614,
     },
     optimismSepolia: {
-      url: process.env.OPTIMISM_SEPOLIA_RPC_URL || "https://optimism-sepolia.infura.io/v3/9a06dc3f8b30448f8c0d3e9b01a24939",
+      url: process.env.OPTIMISM_SEPOLIA_RPC_URL || `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_ID || "9a06dc3f8b30448f8c0d3e9b01a24939"}`,
       accounts: process.env.VITE_DEPLOYER_PRIVATE_KEY ? [process.env.VITE_DEPLOYER_PRIVATE_KEY] : [],
       chainId: 11155420,
     },
     baseSepolia: {
-      url: process.env.BASE_SEPOLIA_RPC_URL || "https://base-sepolia.infura.io/v3/9a06dc3f8b30448f8c0d3e9b01a24939",
+      url: process.env.BASE_SEPOLIA_RPC_URL || `https://base-sepolia.infura.io/v3/${process.env.INFURA_ID || "9a06dc3f8b30448f8c0d3e9b01a24939"}`,
       accounts: process.env.VITE_DEPLOYER_PRIVATE_KEY ? [process.env.VITE_DEPLOYER_PRIVATE_KEY] : [],
       chainId: 84532,
     },
     polygonAmoy: {
-      url: process.env.POLYGON_AMOY_RPC_URL || "https://polygon-amoy.infura.io/v3/9a06dc3f8b30448f8c0d3e9b01a24939",
+      url: process.env.POLYGON_AMOY_RPC_URL || `https://polygon-amoy.infura.io/v3/${process.env.INFURA_ID || "9a06dc3f8b30448f8c0d3e9b01a24939"}`,
       accounts: process.env.VITE_DEPLOYER_PRIVATE_KEY ? [process.env.VITE_DEPLOYER_PRIVATE_KEY] : [],
       chainId: 80002,
     },

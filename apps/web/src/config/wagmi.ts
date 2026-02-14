@@ -59,10 +59,10 @@ export const cashSubnetTestnet = defineChain({
     nativeCurrency: { decimals: 18, name: 'Sepolia CIO Token', symbol: 'SepoliaCIO' },
     rpcUrls: {
         default: {
-            http: ['http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc'],
+            http: [import.meta.env.VITE_TESTNET_HUB_RPC_URL || 'http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc'],
         },
         public: {
-            http: ['http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc'],
+            http: [import.meta.env.VITE_TESTNET_HUB_RPC_URL || 'http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc'],
         },
     },
     blockExplorers: {
