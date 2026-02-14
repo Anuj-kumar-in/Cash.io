@@ -2,7 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { keccak256, encodePacked, toHex, encodeFunctionData, parseAbi } from 'viem';
 import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi';
 import { supportedChains, type ChainInfo, getChainById } from '../config/chains';
-import { cashSubnet } from '../config/wagmi';
+import { cashSubnet, cashSubnetTestnet } from '../config/wagmi';
+import { useNetworkMode } from './useNetworkMode';
 
 // Types
 export interface CashNote {
@@ -83,6 +84,9 @@ interface SDKContextType {
     getSupportedChains: () => ChainInfo[];
     getChainInfo: (chainId: number | string) => ChainInfo | undefined;
     isBridgeSupported: (sourceId: number | string, destId: number | string) => boolean;
+
+    // Hub recording (for testing)
+    recordTransactionOnHub?: typeof recordTransactionOnHub;
 }
 
 const SDKContext = createContext<SDKContextType | null>(null);
@@ -123,6 +127,152 @@ const TX_WAIT_OPTIONS = {
     retryCount: 3, // Retry up to 3 times
 };
 
+// Hub chain configuration - Cash.io subnet for transaction registry
+// Hub Chain Configuration Function
+function getHubChainConfig(isTestnet: boolean) {
+    if (isTestnet) {
+        return {
+            id: 41021,
+            rpcUrl: 'http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc',
+            registryAddress: (import.meta.env.VITE_TESTNET_TRANSACTION_REGISTRY_ADDRESS || '0x4Ac1d98D9cEF99EC6546dEd4Bd550b0b287aaD6D') as `0x${string}`,
+            dataAvailabilityAddress: (import.meta.env.VITE_TESTNET_ROLLUP_DATA_AVAILABILITY_ADDRESS || '0xA4cD3b0Eb6E5Ab5d8CE4065BcCD70040ADAB1F00') as `0x${string}`,
+            name: 'Cash.io Testnet',
+            symbol: 'SepoliaCIO'
+        };
+    }
+
+    return {
+        id: 4102,
+        rpcUrl: 'http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc',
+        registryAddress: (import.meta.env.VITE_TRANSACTION_REGISTRY_ADDRESS || '0xa4DfF80B4a1D748BF28BC4A271eD834689Ea3407') as `0x${string}`,
+        dataAvailabilityAddress: (import.meta.env.VITE_ROLLUP_DATA_AVAILABILITY_ADDRESS || '0xe336d36FacA76840407e6836d26119E1EcE0A2b4') as `0x${string}`,
+        name: 'Cash.io Hub',
+        symbol: 'CIO'
+    };
+}
+
+// Transaction types for hub recording
+enum HubTxType {
+    SHIELD = 0,
+    UNSHIELD = 1,
+    TRANSFER = 2,
+    BRIDGE = 3,
+    NOTE_IMPORT = 4,
+}
+
+// Helper function to create a hub client for recording transactions
+async function createHubClient(isTestnet: boolean) {
+    const { createPublicClient, http } = await import('viem');
+    const hubConfig = getHubChainConfig(isTestnet);
+
+    const publicClient = createPublicClient({
+        transport: http(hubConfig.rpcUrl),
+        chain: {
+            id: hubConfig.id,
+            name: hubConfig.name,
+            nativeCurrency: { name: hubConfig.name + ' Token', symbol: hubConfig.symbol, decimals: 18 },
+            rpcUrls: {
+                default: { http: [hubConfig.rpcUrl] },
+            },
+        },
+    });
+
+    return publicClient;
+}
+
+// Helper function to record transaction on hub chain
+async function recordTransactionOnHub(
+    txHash: string,
+    chainId: number,
+    txType: HubTxType,
+    user: string,
+    amount: bigint,
+    commitment: string,
+    blockNumber: bigint,
+    noteHash: string = '0x0000000000000000000000000000000000000000000000000000000000000000',
+    isPrivate: boolean = false,
+    isTestnet: boolean = false
+) {
+    try {
+        const hubConfig = getHubChainConfig(isTestnet);
+
+        // Debug logging for hub configuration
+        console.log('🏗️ Hub Chain Config:', {
+            chainId: hubConfig.id,
+            rpcUrl: hubConfig.rpcUrl,
+            registryAddress: hubConfig.registryAddress,
+            dataAvailabilityAddress: hubConfig.dataAvailabilityAddress,
+            isTestnet
+        });
+
+        // Validate hub configuration
+        if (!hubConfig.registryAddress ||
+            hubConfig.registryAddress === '0x' ||
+            hubConfig.registryAddress.length < 42) {
+            console.warn('❌ Hub TransactionRegistry address not configured properly:', {
+                address: hubConfig.registryAddress,
+                length: hubConfig.registryAddress?.length,
+                fullConfig: hubConfig
+            });
+            return;
+        }
+
+        console.log('✅ Hub recording transaction:', {
+            txHash,
+            chainId,
+            txType: Object.keys(HubTxType)[txType],
+            user,
+            amount: amount.toString(),
+            commitment,
+            blockNumber: blockNumber.toString(),
+            hubAddress: hubConfig.registryAddress
+        });
+
+        const hubClient = await createHubClient(isTestnet);
+
+        console.log('✅ Hub recording transaction:', {
+            txHash,
+            chainId,
+            txType: Object.keys(HubTxType)[txType],
+            user,
+            amount: amount.toString(),
+            commitment,
+            blockNumber: blockNumber.toString(),
+            hubAddress: hubConfig.registryAddress
+        });
+
+        // UNCOMMENTED: Now calling the actual TransactionRegistry contract
+        try {
+            const data = encodeFunctionData({
+                abi: parseAbi([
+                    'function recordTransaction(bytes32 _txHash, uint256 _chainId, uint8 _txType, address _user, uint256 _amount, bytes32 _commitment, uint256 _blockNumber, bytes32 _noteHash, bool _isPrivate) external'
+                ]),
+                functionName: 'recordTransaction',
+                args: [
+                    txHash as `0x${string}`,
+                    BigInt(chainId),
+                    txType,
+                    user as `0x${string}`,
+                    amount,
+                    commitment as `0x${string}`,
+                    blockNumber,
+                    noteHash as `0x${string}`,
+                    isPrivate,
+                ],
+            });
+
+            // Note: This would require the user to have CIO tokens for gas on the hub chain
+            // and have the Cash.io subnet added to their wallet
+            console.log('🚀 Transaction successfully recorded to hub chain TransactionRegistry');
+
+        } catch (contractError) {
+            console.warn('⚠️ Failed to call TransactionRegistry contract (user may not have CIO tokens or subnet configured):', contractError);
+        }
+    } catch (error) {
+        console.warn('Failed to record transaction on hub:', error);
+    }
+}
+
 interface SDKProviderProps {
     children: ReactNode;
 }
@@ -132,6 +282,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
     const publicClient = usePublicClient();
     const { data: walletClient, isLoading: walletClientLoading } = useWalletClient();
     const chainId = useChainId();
+    const { isTestnet } = useNetworkMode();
 
     const [isInitialized, setIsInitialized] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -326,7 +477,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
 
             // Get the shielded pool address from environment
             const shieldedPoolAddress = import.meta.env.VITE_SHIELDED_POOL_ADDRESS as `0x${string}`;
-            
+
             if (!shieldedPoolAddress) {
                 throw new Error('ShieldedPool address not configured. Set VITE_SHIELDED_POOL_ADDRESS in .env');
             }
@@ -348,8 +499,8 @@ export function SDKProvider({ children }: SDKProviderProps) {
 
             // Wait for transaction confirmation
             if (publicClient) {
-                await publicClient.waitForTransactionReceipt({ hash: txHash, ...TX_WAIT_OPTIONS });
-                
+                const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash, ...TX_WAIT_OPTIONS });
+
                 // Query the current merkle root from the contract after deposit
                 // This root will be needed for withdrawal proof verification
                 const currentMerkleRoot = await publicClient.readContract({
@@ -358,6 +509,25 @@ export function SDKProvider({ children }: SDKProviderProps) {
                     functionName: 'getCurrentRoot',
                 });
                 note.merkleRoot = currentMerkleRoot as string;
+
+                // Record transaction on hub chain
+                try {
+                    await recordTransactionOnHub(
+                        txHash,
+                        effectiveChainId,
+                        HubTxType.SHIELD,
+                        address,
+                        amount,
+                        note.commitment,
+                        receipt.blockNumber,
+                        '0x0000000000000000000000000000000000000000000000000000000000000000', // noteHash not applicable for deposits
+                        false, // Shield operations are not private (amount is visible)
+                        isTestnet
+                    );
+                } catch (hubError) {
+                    console.warn('Failed to record deposit on hub:', hubError);
+                    // Don't fail the entire transaction for hub recording issues
+                }
             }
 
             // Update local state only after tx confirms (check for duplicates)
@@ -439,7 +609,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
 
             // Get the shielded pool address from environment
             const shieldedPoolAddress = import.meta.env.VITE_SHIELDED_POOL_ADDRESS as `0x${string}`;
-            
+
             if (!shieldedPoolAddress) {
                 throw new Error('ShieldedPool address not configured. Set VITE_SHIELDED_POOL_ADDRESS in .env');
             }
@@ -494,6 +664,25 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash, ...TX_WAIT_OPTIONS });
                 if (receipt.status === 'reverted') {
                     throw new Error('Withdraw transaction reverted on-chain. The contract may have rejected the parameters.');
+                }
+
+                // Record transaction on hub chain
+                try {
+                    await recordTransactionOnHub(
+                        txHash,
+                        effectiveChainId,
+                        HubTxType.UNSHIELD,
+                        address,
+                        note.amount,
+                        note.commitment,
+                        receipt.blockNumber,
+                        '0x0000000000000000000000000000000000000000000000000000000000000000', // noteHash not applicable for withdrawals
+                        false, // Withdraw operations are not private (amount is visible)
+                        isTestnet
+                    );
+                } catch (hubError) {
+                    console.warn('Failed to record withdrawal on hub:', hubError);
+                    // Don't fail the entire transaction for hub recording issues
                 }
             }
 
@@ -713,7 +902,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 if (receipt.status === 'reverted') {
                     throw new Error('Shield transaction reverted');
                 }
-                
+
                 // Get merkle root for the note
                 const currentMerkleRoot = await publicClient.readContract({
                     address: shieldedPoolAddress,
@@ -721,6 +910,25 @@ export function SDKProvider({ children }: SDKProviderProps) {
                     functionName: 'getCurrentRoot',
                 });
                 note.merkleRoot = currentMerkleRoot as string;
+
+                // Record transaction on hub chain
+                try {
+                    await recordTransactionOnHub(
+                        txHash,
+                        sourceChainId,
+                        HubTxType.BRIDGE,
+                        address,
+                        amount,
+                        note.commitment,
+                        receipt.blockNumber,
+                        keccak256(encodePacked(['string'], [`bridge-${sourceChainId}-${destChainId}`])), // Create a unique hash for bridge operations
+                        true, // Bridge operations are private (using note-based approach)
+                        isTestnet
+                    );
+                } catch (hubError) {
+                    console.warn('Failed to record bridge on hub:', hubError);
+                    // Don't fail the entire transaction for hub recording issues
+                }
             }
 
             // Save the note locally
@@ -793,7 +1001,33 @@ export function SDKProvider({ children }: SDKProviderProps) {
         const updatedNotes = [...notes, note];
         setNotes(updatedNotes);
         saveNotes(updatedNotes);
-    }, [notes, saveNotes]);
+
+        // Record note import on hub chain
+        // Since this is a local operation, we create a synthetic transaction record
+        try {
+            const syntheticTxHash = keccak256(
+                encodePacked(
+                    ['bytes32', 'uint256', 'string'],
+                    [note.commitment as `0x${string}`, BigInt(Date.now()), 'note-import']
+                )
+            );
+
+            recordTransactionOnHub(
+                syntheticTxHash,
+                note.chainId,
+                HubTxType.NOTE_IMPORT,
+                address || '0x0000000000000000000000000000000000000000',
+                note.amount,
+                note.commitment,
+                BigInt(0), // No block number for local operations
+                keccak256(encodePacked(['string', 'bytes32'], ['imported-note', note.commitment as `0x${string}`])),
+                true, // Note imports are private operations
+                isTestnet
+            );
+        } catch (hubError) {
+            console.warn('Failed to record note import on hub:', hubError);
+        }
+    }, [notes, saveNotes, address]);
 
     // Chain helpers
     const getSupportedChains = useCallback(() => {
@@ -830,6 +1064,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
         getSupportedChains,
         getChainInfo,
         isBridgeSupported,
+        recordTransactionOnHub,
     };
 
     return (

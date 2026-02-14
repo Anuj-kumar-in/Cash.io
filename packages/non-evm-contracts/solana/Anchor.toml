@@ -1,0 +1,27 @@
+[features]
+seeds = false
+skip-lint = false
+
+[programs.localnet]
+cashio_bridge = "FeRHaZXb3tbmjWWSwZXQX1HH7DSvAM7nR3mdSxN6VjpJ"
+
+[programs.devnet]
+cashio_bridge = "FeRHaZXb3tbmjWWSwZXQX1HH7DSvAM7nR3mdSxN6VjpJ"
+
+[programs.mainnet]
+cashio_bridge = "FeRHaZXb3tbmjWWSwZXQX1HH7DSvAM7nR3mdSxN6VjpJ"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+deploy = "anchor deploy"
+
+[test]
+startup_wait = 5000
+shutdown_wait = 2000

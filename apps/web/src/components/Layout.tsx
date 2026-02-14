@@ -14,8 +14,11 @@ import {
     Moon,
     FlaskConical,
     Rocket,
+    Plus,
+    TestTube,
 } from 'lucide-react';
 import { WalletButton } from './WalletModal';
+import { AddSubnetModal } from './AddSubnetModal';
 import { useSDK } from '../hooks/useSDK';
 import { useTheme } from '../hooks/useTheme';
 import { useNetworkMode } from '../hooks/useNetworkMode';
@@ -32,6 +35,7 @@ const navigation = [
 export default function Layout() {
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [subnetModalOpen, setSubnetModalOpen] = useState(false);
     const { isConnected } = useAccount();
     const chainId = useChainId();
     const { isLoading: sdkLoading } = useSDK();
@@ -83,6 +87,23 @@ export default function Layout() {
                             {sdkLoading && (
                                 <div className="w-2 h-2 bg-[var(--color-warning)] rounded-full animate-pulse" />
                             )}
+
+                            {/* Hub Chain Status */}
+                            <button
+                                onClick={() => setSubnetModalOpen(true)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    isTestnet 
+                                        ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
+                                        : 'bg-purple-500/10 text-purple-600 hover:bg-purple-500/20'
+                                }`}
+                                title={`Click to add Cash.io ${isTestnet ? 'Testnet' : 'Hub'} to MetaMask`}
+                            >
+                                <div className={`w-2 h-2 rounded-full animate-pulse ${
+                                    isTestnet ? 'bg-amber-500' : 'bg-purple-500'
+                                }`} />
+                                <span className="hidden sm:inline">{isTestnet ? 'TestHub' : 'Hub'}</span>
+                                <Plus size={14} className="opacity-60" />
+                            </button>
 
                             {/* Network Mode Toggle */}
                             <button
@@ -175,13 +196,29 @@ export default function Layout() {
                         </div>
                         <div className="flex items-center gap-4">
                             {isConnected && currentChain && (
-                                <span className="badge badge-neutral">{currentChain.icon} {currentChain.name}</span>
+                                <div className="flex items-center gap-3">
+                                    <span className="badge badge-neutral">{currentChain.icon} {currentChain.name}</span>
+                                    <span className="text-[var(--color-muted)]">•</span>
+                                    <span className={`badge border ${
+                                        isTestnet 
+                                            ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                                            : 'bg-purple-500/10 text-purple-600 border-purple-500/20'
+                                    }`}>
+                                        {isTestnet ? '🧪' : '💰'} Cash.io {isTestnet ? 'Testnet' : 'Hub'}
+                                    </span>
+                                </div>
                             )}
                             <span className="text-sm font-mono text-[var(--color-muted)]">v1.0.0</span>
                         </div>
                     </div>
                 </div>
             </footer>
+            
+            {/* Add Subnet Modal */}
+            <AddSubnetModal 
+                isOpen={subnetModalOpen} 
+                onClose={() => setSubnetModalOpen(false)} 
+            />
         </div>
     );
 }

@@ -1,0 +1,34 @@
+{
+  "network": "testnet",
+  "chain_id": "4c78adac",
+  "package_id": "0xbc4b492312d1a16139c8035cf34e521ac1db96a8850f7447c2318b90cf489366",
+  "bridge_state_id": "0x746ddcfab675fcfe7ab931e7f2713d7f4817aeea9a1375746d194f4a76d3f06f",
+  "admin_cap_id": "0xed8f7b410d5216073fbdf5135ea9bcd7cc99cb01a5a816cab10b4611440ab2b9",
+  "upgrade_cap_id": "0xf68506bf05e67780bff8cd3590c8e07cf31163641063e637f2eadf3f55aa2247",
+  "deployer": "0xa1b903ba624d8ab4e81e435a1b708515618982c2f102f04404c16e1deb2e5659",
+  "deploy_tx": "HPTapUiXX1cKqZ3sfvhQN5xd7SNnfDLUkjK866PyuB3b",
+  "deployed_at": "2026-02-09",
+  "objects": {
+    "bridge_state": {
+      "id": "0x746ddcfab675fcfe7ab931e7f2713d7f4817aeea9a1375746d194f4a76d3f06f",
+      "type": "shared",
+      "initial_shared_version": 698399944
+    },
+    "admin_cap": {
+      "id": "0xed8f7b410d5216073fbdf5135ea9bcd7cc99cb01a5a816cab10b4611440ab2b9",
+      "type": "owned",
+      "owner": "0xa1b903ba624d8ab4e81e435a1b708515618982c2f102f04404c16e1deb2e5659"
+    },
+    "upgrade_cap": {
+      "id": "0xf68506bf05e67780bff8cd3590c8e07cf31163641063e637f2eadf3f55aa2247",
+      "type": "owned",
+      "owner": "0xa1b903ba624d8ab4e81e435a1b708515618982c2f102f04404c16e1deb2e5659"
+    }
+  },
+  "bridge_config": {
+    "hub_chain_id": 999888777,
+    "guardian_threshold": 1,
+    "min_deposit_sui": 0.01,
+    "max_deposit_sui": 100
+  }
+}

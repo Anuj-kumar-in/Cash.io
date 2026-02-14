@@ -22,6 +22,34 @@ export interface TransactionIntent {
 }
 
 /**
+ * Extended bridge intent with chain IDs
+ */
+export interface BridgeIntent extends TransactionIntent {
+    type: "bridge";
+    sourceChainId?: number;
+    destinationChainId?: number;
+    direction: "deposit" | "withdraw";
+    noteCommitment?: string;
+}
+
+/**
+ * Bridge operation status
+ */
+export interface BridgeStatus {
+    state: "pending" | "depositing" | "awaiting_relay" | "relaying" | "completed" | "failed";
+    sourceChainId?: number;
+    destinationChainId?: number;
+    depositTxHash?: string;
+    relayTxHash?: string;
+    withdrawTxHash?: string;
+    amount?: string;
+    fee?: string;
+    noteCommitment?: string;
+    estimatedTime?: number;
+    error?: string;
+}
+
+/**
  * Proof generation status
  */
 export interface ProofStatus {
@@ -94,6 +122,12 @@ export const AgentState = Annotation.Root({
 
     // Transaction status
     transactionStatus: Annotation<TransactionStatus | null>({
+        reducer: (_, next) => next,
+        default: () => null,
+    }),
+
+    // Bridge status
+    bridgeStatus: Annotation<BridgeStatus | null>({
         reducer: (_, next) => next,
         default: () => null,
     }),

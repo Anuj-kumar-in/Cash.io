@@ -33,20 +33,42 @@ import {
 } from 'wagmi/chains';
 import { injected, walletConnect } from 'wagmi/connectors';
 
-// Custom Cash.io Hub Chain
-// For development: Using Sepolia testnet (Chain ID 11155111) until local subnet is deployed
+// Custom Cash.io Hub Chains
+// Cash.io Mainnet Subnet (Chain ID 4102)
 export const cashSubnet = defineChain({
-    ...sepolia,
-    id: 11155111,
-    name: 'Cash.io Hub (Sepolia)',
+    id: 4102,
+    name: 'Cash.io Hub',
+    nativeCurrency: { decimals: 18, name: 'CIO Token', symbol: 'CIO' },
     rpcUrls: {
         default: {
-            http: [import.meta.env.VITE_HUB_RPC_URL || 'https://sepolia.drpc.org'],
+            http: ['http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc'],
         },
         public: {
-            http: [import.meta.env.VITE_HUB_RPC_URL || 'https://sepolia.drpc.org'],
+            http: ['http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc'],
         },
     },
+    blockExplorers: {
+        default: { name: 'Cash.io Explorer', url: 'https://explorer.cash.io' },
+    },
+});
+
+// Cash.io Testnet Subnet (Chain ID 41021)
+export const cashSubnetTestnet = defineChain({
+    id: 41021,
+    name: 'Cash.io Testnet',
+    nativeCurrency: { decimals: 18, name: 'Sepolia CIO Token', symbol: 'SepoliaCIO' },
+    rpcUrls: {
+        default: {
+            http: ['http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc'],
+        },
+        public: {
+            http: ['http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc'],
+        },
+    },
+    blockExplorers: {
+        default: { name: 'Cash.io Testnet Explorer', url: 'https://testnet-explorer.cash.io' },
+    },
+    testnet: true,
 });
 
 // Bitcoin L2 / Sidechain definitions
@@ -187,8 +209,9 @@ export const coreTestnet = defineChain({
 
 // All supported chains
 export const allChains = [
-    // Hub
+    // Hub Chains
     cashSubnet,
+    cashSubnetTestnet,
     // EVM Mainnets
     mainnet,
     polygon,
@@ -208,7 +231,8 @@ export const allChains = [
     zora,
     manta,
     polygonZkEvm,
-    // EVM Testnets (Exclude explicit Sepolia as it conflicts with cashSubnet ID)
+    // EVM Testnets
+    sepolia,
     holesky,
     polygonAmoy,
     arbitrumSepolia,
@@ -243,8 +267,9 @@ export const config = createConfig({
         walletConnect({ projectId: walletConnectProjectId }),
     ],
     transports: {
-        // Hub Chain
+        // Hub Chains
         [cashSubnet.id]: http(),
+        [cashSubnetTestnet.id]: http(),
         // EVM Mainnets with premium RPCs for production
         [mainnet.id]: http('https://eth.llamarpc.com'),
         [polygon.id]: http('https://polygon-rpc.com'),
@@ -265,6 +290,7 @@ export const config = createConfig({
         [manta.id]: http('https://pacific-rpc.manta.network/http'),
         [polygonZkEvm.id]: http('https://zkevm-rpc.com'),
         // EVM Testnets
+        [sepolia.id]: http(),
         [holesky.id]: http('https://ethereum-holesky.publicnode.com'),
         [polygonAmoy.id]: http('https://rpc-amoy.polygon.technology'),
         [arbitrumSepolia.id]: http('https://sepolia-rollup.arbitrum.io/rpc'),
@@ -299,7 +325,7 @@ export const contractAddresses: Record<number, {
     entryPoint?: string;
     bridge?: string;
 }> = {
-    // Hub Chain (Cash.io Subnet) - Full protocol
+    // Hub Chain (Cash.io Mainnet Subnet) - Full protocol
     [cashSubnet.id]: {
         shieldedPool: import.meta.env.VITE_SHIELDED_POOL_ADDRESS,
         zkVerifier: import.meta.env.VITE_ZK_VERIFIER_ADDRESS,
@@ -307,6 +333,15 @@ export const contractAddresses: Record<number, {
         accountFactory: import.meta.env.VITE_ACCOUNT_FACTORY_ADDRESS,
         paymaster: import.meta.env.VITE_PAYMASTER_ADDRESS,
         entryPoint: import.meta.env.VITE_ENTRY_POINT_ADDRESS || '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    },
+    // Hub Chain (Cash.io Testnet Subnet) - Full protocol
+    [cashSubnetTestnet.id]: {
+        shieldedPool: import.meta.env.VITE_TESTNET_SHIELDED_POOL_ADDRESS || import.meta.env.VITE_SHIELDED_POOL_ADDRESS,
+        zkVerifier: import.meta.env.VITE_TESTNET_ZK_VERIFIER_ADDRESS || import.meta.env.VITE_ZK_VERIFIER_ADDRESS,
+        commitmentTree: import.meta.env.VITE_TESTNET_COMMITMENT_TREE_ADDRESS || import.meta.env.VITE_COMMITMENT_TREE_ADDRESS,
+        accountFactory: import.meta.env.VITE_TESTNET_ACCOUNT_FACTORY_ADDRESS || import.meta.env.VITE_ACCOUNT_FACTORY_ADDRESS,
+        paymaster: import.meta.env.VITE_TESTNET_PAYMASTER_ADDRESS || import.meta.env.VITE_PAYMASTER_ADDRESS,
+        entryPoint: import.meta.env.VITE_TESTNET_ENTRY_POINT_ADDRESS || '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
     },
     // EVM Mainnets - Bridge only
     [mainnet.id]: { bridge: import.meta.env.VITE_ETH_BRIDGE_ADDRESS },
@@ -322,9 +357,19 @@ export const contractAddresses: Record<number, {
     [blast.id]: { bridge: import.meta.env.VITE_BLAST_BRIDGE_ADDRESS },
     [mantle.id]: { bridge: import.meta.env.VITE_MANTLE_BRIDGE_ADDRESS },
     // EVM Testnets
+    [sepolia.id]: {
+        shieldedPool: import.meta.env.VITE_SHIELDED_POOL_ADDRESS,
+        zkVerifier: import.meta.env.VITE_ZK_VERIFIER_ADDRESS,
+        commitmentTree: import.meta.env.VITE_COMMITMENT_TREE_ADDRESS,
+        accountFactory: import.meta.env.VITE_ACCOUNT_FACTORY_ADDRESS,
+        paymaster: import.meta.env.VITE_PAYMASTER_ADDRESS,
+        entryPoint: import.meta.env.VITE_ENTRY_POINT_ADDRESS || '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+        bridge: import.meta.env.VITE_ETH_BRIDGE_ADDRESS,
+    },
     [arbitrumSepolia.id]: { bridge: import.meta.env.VITE_ARBITRUM_SEPOLIA_BRIDGE_ADDRESS },
     [optimismSepolia.id]: { bridge: import.meta.env.VITE_OPTIMISM_SEPOLIA_BRIDGE_ADDRESS },
     [baseSepolia.id]: { bridge: import.meta.env.VITE_BASE_SEPOLIA_BRIDGE_ADDRESS },
+    [polygonAmoy.id]: { bridge: import.meta.env.VITE_POLYGON_AMOY_BRIDGE_ADDRESS },
     // Bitcoin L2s
     [rootstock.id]: { bridge: import.meta.env.VITE_ROOTSTOCK_BRIDGE_ADDRESS },
     [rootstockTestnet.id]: { bridge: import.meta.env.VITE_ROOTSTOCK_TESTNET_BRIDGE_ADDRESS },

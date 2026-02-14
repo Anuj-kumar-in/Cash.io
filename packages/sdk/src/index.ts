@@ -23,6 +23,21 @@ import { ZKProver, ProofInputs, Proof } from "./prover.js";
 import { AccountAbstractionClient, UserOperationReceipt } from "./aa.js";
 import { BridgeClient, BridgeDeposit, BridgeWithdrawal } from "./bridge.js";
 import { IPFSClient, IPFSConfig, IPFSUploadResult, RecoveryKeyData, RecoveryKeyUtils } from "./ipfs.js";
+import {
+    BridgeNote,
+    createBridgeNote,
+    executeBridgeDeposit,
+    claimBridgeNote,
+    executeBridgeWithdrawal,
+    serializeBridgeNote,
+    deserializeBridgeNote,
+    calculateBridgeFees,
+    getEstimatedBridgeTime,
+    BRIDGE_CHAINS,
+    BridgeFees,
+    BridgeDepositParams,
+    BridgeWithdrawParams
+} from "./bridgeNote.js";
 
 /**
  * SDK Configuration

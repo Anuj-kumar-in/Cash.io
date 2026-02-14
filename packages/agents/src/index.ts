@@ -4,9 +4,13 @@
  * Exports the agent graphs and utilities for use in the application.
  */
 
+import dotenv from "dotenv";
+dotenv.config();
+
 import { createTransactionAgentGraph, createSimpleTransactionGraph, createHealthMonitorGraph } from "./graphs/transactionGraph.js";
 import { AgentState } from "./state/agentState.js";
-import type { AgentStateType } from "./state/agentState.js";
+import type { AgentStateType, BridgeIntent, BridgeStatus } from "./state/agentState.js";
+import { createBridgeCoordinatorNode, createBridgeRelayerNode, getAvailableBridgeChains } from "./nodes/bridgeCoordinator.js";
 
 export {
     // Graphs
@@ -14,12 +18,19 @@ export {
     createSimpleTransactionGraph,
     createHealthMonitorGraph,
 
+    // Bridge Nodes
+    createBridgeCoordinatorNode,
+    createBridgeRelayerNode,
+    getAvailableBridgeChains,
+
     // State
     AgentState,
 };
 
 export type {
     AgentStateType,
+    BridgeIntent,
+    BridgeStatus,
 };
 
 /**

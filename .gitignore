@@ -1,5 +1,7 @@
 # Node
 node_modules/
+.npm
+.eslintcache
 
 # Logs
 logs/
@@ -7,6 +9,7 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+nohup.out
 
 # Runtime data
 pids/
@@ -19,9 +22,15 @@ coverage/
 
 # Build outputs
 dist/
+dist-ssr/
 build/
 out/
 .vite/
+.next/
+target/
+test-ledger/
+bin/
+obj/
 
 # TypeScript
 *.tsbuildinfo
@@ -35,7 +44,12 @@ out/
 # Environment
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.*.local
+.env.apple-developer-domain-association.development
+.env.apple-developer-domain-association.production
 
 # Editor directories and files
 .vscode/
@@ -44,18 +58,16 @@ out/
 *.ntvs*
 *.njsproj
 *.sln
+*.swp
+*.swo
+.project
+.classpath
+.settings/
 
 # OS files
 .DS_Store
 Thumbs.db
 ehthumbs.db
-
-# npm/yarn lockfiles (optional: uncomment if you don't commit lockfiles)
-# package-lock.json
-# yarn.lock
-
-# ESLint cache
-.eslintcache
 
 # Hardhat / Solidity artifacts
 artifacts/
@@ -63,7 +75,32 @@ cache/
 typechain/
 typechain-types/
 
+# Circom / SnarkJS
+*.r1cs
+*.zkey
+*.wasm
+*.ptau
+*.sym
+*.vkey
+
+# Anchor / Solana
+.anchor/
+
+# Turbo
+.turbo
+
+# Rust
+debug/
+release/
+
+# Docker
+.dockerignore
+!/**/.dockerignore
+
 # Misc
 *.tgz
 tmp/
 temp/
+.DS_Store
+.env.apple-developer-domain-association.development
+.env.apple-developer-domain-association.production

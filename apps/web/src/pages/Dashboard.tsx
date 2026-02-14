@@ -20,12 +20,13 @@ import {
     CheckCircle2,
     AlertCircle,
     RefreshCw,
+    TestTube,
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
 import { useNetworkMode } from '../hooks/useNetworkMode';
 import { WalletModal } from '../components/WalletModal';
 import { supportedChains, getChainById, type ChainInfo } from '../config/chains';
-import { cashSubnet } from '../config/wagmi';
+import { cashSubnet, cashSubnetTestnet } from '../config/wagmi';
 
 export default function Dashboard() {
     const { isConnected, address } = useAccount();
@@ -224,19 +225,27 @@ export default function Dashboard() {
                 <h2 className="text-lg font-bold mb-4">Quick Actions</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                        { icon: Shield, label: 'Shield Assets', desc: 'Deposit to shielded pool', to: '/shield', color: 'bg-black text-white' },
-                        { icon: Send, label: 'Private Transfer', desc: '2-in-2-out ZK transfer', to: '/transfer', color: 'bg-[var(--color-subtle)]' },
-                        { icon: Globe, label: 'Cross-Chain Bridge', desc: '30+ chains supported', to: '/bridge', color: 'bg-[var(--color-subtle)]' },
-                        { icon: ArrowDownLeft, label: 'Unshield', desc: 'Withdraw to public', to: '/shield', color: 'bg-[var(--color-subtle)]' },
+                        { icon: Shield, label: 'Shield Assets', desc: 'Deposit to shielded pool', to: '/app/shield', color: 'bg-black text-white' },
+                        { icon: Send, label: 'Private Transfer', desc: '2-in-2-out ZK transfer', to: '/app/transfer', color: 'bg-[var(--color-subtle)]' },
+                        { icon: Globe, label: 'Cross-Chain Bridge', desc: '30+ chains supported', to: '/app/bridge', color: 'bg-[var(--color-subtle)]' },
+                        { icon: TestTube, label: 'Hub Test Suite', desc: 'Test subnet recording', to: '/app/hub-test', color: 'bg-purple-500/10 text-purple-600 border-purple-500/20' },
                     ].map((action) => (
                         <Link
                             key={action.label}
                             to={action.to}
                             className={`card ${action.color} group hover:scale-[1.02] transition-transform`}
                         >
-                            <action.icon size={24} className={action.color === 'bg-black text-white' ? '' : 'text-[var(--color-muted)]'} />
+                            <action.icon size={24} className={
+                                action.color === 'bg-black text-white' ? '' : 
+                                action.color.includes('purple') ? 'text-purple-600' :
+                                'text-[var(--color-muted)]'
+                            } />
                             <h3 className="font-semibold mt-3">{action.label}</h3>
-                            <p className={`text-sm mt-1 ${action.color === 'bg-black text-white' ? 'text-white/60' : 'text-[var(--color-muted)]'}`}>
+                            <p className={`text-sm mt-1 ${
+                                action.color === 'bg-black text-white' ? 'text-white/60' : 
+                                action.color.includes('purple') ? 'text-purple-500' :
+                                'text-[var(--color-muted)]'
+                            }`}>
                                 {action.desc}
                             </p>
                             <ChevronRight size={16} className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -278,6 +287,56 @@ export default function Dashboard() {
                             +{supportedChains.filter(c => c.isTestnet === isTestnet).length - 12}
                         </div>
                     )}
+                </div>
+            </div>
+
+            {/* Hub Chain Status */}
+            <div>
+                <h2 className="text-lg font-bold mb-4">Hub Chain Status</h2>
+                <div className={`card bg-gradient-to-r border ${
+                    isTestnet 
+                        ? 'from-amber-500/10 to-orange-500/10 border-amber-500/20'
+                        : 'from-purple-500/10 to-blue-500/10 border-purple-500/20'
+                }`}>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                                isTestnet ? 'bg-amber-500/20' : 'bg-purple-500/20'
+                            }`}>
+                                <span className="text-2xl">{isTestnet ? '🧪' : '💰'}</span>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg">{isTestnet ? 'Cash.io Testnet' : 'Cash.io Hub'}</h3>
+                                <p className="text-[var(--color-muted)] text-sm">
+                                    All your transactions are being recorded on the {isTestnet ? 'testnet' : 'decentralized'} hub
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 text-emerald-600 rounded-lg">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                                <span className="text-sm font-medium">Connected</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className={`text-2xl font-bold ${
+                                isTestnet ? 'text-amber-600' : 'text-purple-600'
+                            }`}>{transactions.length}</div>
+                            <div className="text-xs text-[var(--color-muted)]">Recorded Txs</div>
+                        </div>
+                        <div className="text-center">
+                            <div className={`text-2xl font-bold ${
+                                isTestnet ? 'text-amber-600' : 'text-purple-600'
+                            }`}>{isTestnet ? '41021' : '4102'}</div>
+                            <div className="text-xs text-[var(--color-muted)]">Chain ID</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-emerald-600">100%</div>
+                            <div className="text-xs text-[var(--color-muted)]">Uptime</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

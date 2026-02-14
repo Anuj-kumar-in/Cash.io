@@ -9,11 +9,11 @@ import { defineChain } from 'viem';
 
 // Cash.io Hub Subnet (Avalanche L1)
 export const cashSubnet = defineChain({
-    id: 99999,
+    id: 4102,
     name: 'Cash.io Subnet',
-    nativeCurrency: { name: 'CASH', symbol: 'CASH', decimals: 18 },
+    nativeCurrency: { name: 'CIO Token', symbol: 'CIO', decimals: 18 },
     rpcUrls: {
-        default: { http: ['http://localhost:9650/ext/bc/cash/rpc'] },
+        default: { http: ['http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc'] },
     },
     blockExplorers: {
         default: { name: 'Cash Explorer', url: 'https://explorer.cash.io' },
@@ -174,8 +174,10 @@ export interface ChainInfo {
 
 // All supported chains with metadata
 export const supportedChains: ChainInfo[] = [
-    // Hub Chain
-    { id: 99999, name: 'Cash.io Subnet', symbol: 'CASH', icon: '💰', category: 'hub', isTestnet: false, bridgeSupported: true, shieldSupported: true },
+    // Hub Chain - Mainnet
+    { id: 4102, name: 'Cash.io Subnet', symbol: 'CIO', icon: '💰', category: 'hub', isTestnet: false, bridgeSupported: true, shieldSupported: true },
+    // Hub Chain - Testnet
+    { id: 41021, name: 'Cash.io Testnet', symbol: 'SepoliaCIO', icon: '💰', category: 'hub', isTestnet: true, bridgeSupported: true, shieldSupported: true },
 
     // EVM Mainnets
     { id: 1, name: 'Ethereum', symbol: 'ETH', icon: '⟠', category: 'evm', isTestnet: false, bridgeSupported: true, shieldSupported: true },

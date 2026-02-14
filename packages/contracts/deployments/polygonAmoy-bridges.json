@@ -1,0 +1,9 @@
+{
+  "contracts": {
+    "ethBridge": "0x639Ac649093D13bAe4A674D7aD6b377525fDB486",
+    "solanaBridge": "0x63B168da635ba5E66b4Dc394C994744C051fd0C9"
+  },
+  "network": "polygonAmoy",
+  "chainId": 80002,
+  "deployedAt": "2026-02-09T00:00:00Z"
+}

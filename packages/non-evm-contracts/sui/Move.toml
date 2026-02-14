@@ -1,0 +1,9 @@
+[package]
+name = "cashio_bridge"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+
+[addresses]
+cashio_bridge = "0x0"

@@ -11,6 +11,7 @@ import { createIntentParserNode, createSimpleIntentParser } from "../nodes/inten
 import { createProofCoordinatorNode } from "../nodes/proofCoordinator.js";
 import { createTransactionSubmitterNode, createTransactionMonitorNode } from "../nodes/transactionSubmitter.js";
 import { createHealthMonitorNode, createSystemHealthCheckNode } from "../nodes/healthMonitor.js";
+import { createBridgeCoordinatorNode, createBridgeRelayerNode } from "../nodes/bridgeCoordinator.js";
 
 /**
  * Create the main transaction agent graph
@@ -27,6 +28,8 @@ export function createTransactionAgentGraph() {
     graph.addNode("health_check", createHealthMonitorNode());
     graph.addNode("handle_error", handleErrorNode);
     graph.addNode("request_approval", requestApprovalNode);
+    graph.addNode("bridge_coordinator", createBridgeCoordinatorNode());
+    graph.addNode("bridge_relayer", createBridgeRelayerNode());
 
     // Define edges
 
@@ -49,9 +52,41 @@ export function createTransactionAgentGraph() {
             case "validation_needed":
                 return "request_approval";
             case "intent_parsed":
+                // Route bridge intents to bridge coordinator
+                if (state.intent?.type === "bridge") {
+                    return "bridge_coordinator";
+                }
                 return "generate_proof";
             default:
                 return "handle_error";
+        }
+    });
+
+    // Bridge coordinator routing
+    graph.addConditionalEdges("bridge_coordinator", (state: AgentStateType) => {
+        switch (state.currentStep) {
+            case "error":
+                return "handle_error";
+            case "generate_proof":
+                return "generate_proof";
+            case "awaiting_relay":
+                return "bridge_relayer";
+            default:
+                return "generate_proof";
+        }
+    });
+
+    // Bridge relayer routing
+    graph.addConditionalEdges("bridge_relayer", (state: AgentStateType) => {
+        switch (state.currentStep) {
+            case "error":
+                return "handle_error";
+            case "monitor":
+                return "monitor_transaction";
+            case "completed":
+                return END;
+            default:
+                return "monitor_transaction";
         }
     });
 

@@ -1,0 +1,15 @@
+{
+  "name": "@cash-io/sui-bridge",
+  "version": "1.0.0",
+  "description": "Cash.io Bridge Contract for Sui",
+  "scripts": {
+    "build": "sui move build",
+    "test": "sui move test",
+    "deploy:testnet": "sui client publish --gas-budget 100000000",
+    "deploy:mainnet": "sui client publish --gas-budget 100000000 --skip-dependency-verification"
+  },
+  "devDependencies": {
+    "@mysten/sui.js": "^0.54.0",
+    "typescript": "^5.3.3"
+  }
+}

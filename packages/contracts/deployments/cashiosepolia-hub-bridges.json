@@ -1,0 +1,7 @@
+{
+  "contracts": {
+    "ethBridge": "0x639Ac649093D13bAe4A674D7aD6b377525fDB486",
+    "solanaBridge": "0x63B168da635ba5E66b4Dc394C994744C051fd0C9",
+    "rootstockBridge": "0xFe15A62cAD3566A49AfCED2BC9EE73c73f5A20A7"
+  }
+}

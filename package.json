@@ -23,7 +23,9 @@
     "compile:circuits": "npm run compile -w @cash-io/circuits",
     "deploy:local": "npm run deploy:local -w @cash-io/contracts",
     "deploy:subnet": "npm run deploy:subnet -w @cash-io/contracts",
-    "setup:circuits": "npm run setup -w @cash-io/circuits"
+    "setup:circuits": "npm run setup -w @cash-io/circuits",
+    "build:non-evm": "npm run build:all -w @cash-io/non-evm-contracts",
+    "deploy:non-evm:testnet": "npm run deploy:all:testnet -w @cash-io/non-evm-contracts"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

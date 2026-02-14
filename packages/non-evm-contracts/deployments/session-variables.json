@@ -1,0 +1,91 @@
+{
+  "generated_at": "2026-02-09",
+  "description": "All important variables generated during non-EVM contract deployment session",
+
+  "solana": {
+    "network": "devnet",
+    "rpc_url": "https://api.devnet.solana.com",
+    "program_id": "FeRHaZXb3tbmjWWSwZXQX1HH7DSvAM7nR3mdSxN6VjpJ",
+    "deployer_address": "8nJQQimAAkdKQwZTLosjgNJwWqWQr5R2577475SyF2dz",
+    "deployer_keypair_path": "/home/anuj_kumar/.config/solana/id.json",
+    "deployer_seed_phrase": "original plug very asthma idle boring twenty stamp tide prefer cram cabbage",
+    "program_keypair_path": "/home/anuj_kumar/cashio-solana/target/deploy/cashio_bridge-keypair.json",
+    "deploy_signature": "5qe9knG9GAhSyBZJ9XEAeozKjdPppRnAm9Ei3jrSAGGF4AsYemWgdXV5E5ot5CvjTBrFTYFzP6vpoqKBbJ8Nt9v4",
+    "explorer_url": "https://explorer.solana.com/address/FeRHaZXb3tbmjWWSwZXQX1HH7DSvAM7nR3mdSxN6VjpJ?cluster=devnet",
+    "deploy_tx_url": "https://explorer.solana.com/tx/5qe9knG9GAhSyBZJ9XEAeozKjdPppRnAm9Ei3jrSAGGF4AsYemWgdXV5E5ot5CvjTBrFTYFzP6vpoqKBbJ8Nt9v4?cluster=devnet",
+    "build_artifact": "/home/anuj_kumar/cashio-solana/target/deploy/cashio_bridge.so",
+    "idl_path": "/home/anuj_kumar/cashio-solana/target/idl/cashio_bridge.json",
+    "status": "deployed"
+  },
+
+  "near": {
+    "network": "testnet",
+    "rpc_url": "https://rpc.testnet.near.org",
+    "contract_account_id": "cashio-bridge-v1.testnet",
+    "contract_public_key": "ed25519:Ci2XRB3VpZyeVx1kjkATCNqJ5aVZsp7Neg4ahZkBzHzn",
+    "contract_secret_key": "ed25519:Vk7VGcQjiKPoj2NP5e9RhKNPaucBW719tcY5L19j73c43zg3Chf7KfiaKEYXK5Aufsgpq3sLpaZwXUqsFycpkMc",
+    "contract_seed_phrase": "park hawk heavy when crawl fee misery tube grain range fruit dizzy",
+    "implicit_account": "adf317d14ae79fca12a4c6debb8a69d2a7ead7114f69c2d337487d7b048a85bf",
+    "deploy_tx_hash": "DbuAEUXnhiAw2SqEnJDq86pGGJMR1vEa7Rj8zKmaJ8bm",
+    "explorer_url": "https://testnet.nearblocks.io/address/cashio-bridge-v1.testnet",
+    "deploy_tx_url": "https://testnet.nearblocks.io/txns/DbuAEUXnhiAw2SqEnJDq86pGGJMR1vEa7Rj8zKmaJ8bm",
+    "wasm_path": "packages/non-evm-contracts/near/res/cashio_bridge_near.wasm",
+    "status": "requires_rebuild",
+    "note": "Contract updated to near-sdk 5.6.0 to fix deserialization error. Rebuild with: cd near && cargo build --target wasm32-unknown-unknown --release && near deploy cashio-bridge-v1.testnet target/wasm32-unknown-unknown/release/cashio_bridge_near.wasm --initFunction new --initArgs '{\"owner_id\":\"cashio-bridge-v1.testnet\",\"hub_chain_id\":\"4102\",\"guardian_threshold\":1}'"
+  },
+
+  "sui": {
+    "network": "testnet",
+    "rpc_url": "https://fullnode.testnet.sui.io:443",
+    "package_id": "0xbc4b492312d1a16139c8035cf34e521ac1db96a8850f7447c2318b90cf489366",
+    "bridge_state_id": "0x746ddcfab675fcfe7ab931e7f2713d7f4817aeea9a1375746d194f4a76d3f06f",
+    "admin_cap_id": "0xed8f7b410d5216073fbdf5135ea9bcd7cc99cb01a5a816cab10b4611440ab2b9",
+    "upgrade_cap_id": "0xf68506bf05e67780bff8cd3590c8e07cf31163641063e637f2eadf3f55aa2247",
+    "deployer_address": "0xa1b903ba624d8ab4e81e435a1b708515618982c2f102f04404c16e1deb2e5659",
+    "deployer_seed_phrase": "abstract control novel adult believe soda hurdle symbol syrup sand bar category",
+    "deploy_tx_digest": "HPTapUiXX1cKqZ3sfvhQN5xd7SNnfDLUkjK866PyuB3b",
+    "explorer_url": "https://suiscan.xyz/testnet/object/0xbc4b492312d1a16139c8035cf34e521ac1db96a8850f7447c2318b90cf489366",
+    "chain_id": "4c78adac",
+    "status": "deployed"
+  },
+
+  "evm_bridges": {
+    "network": "sepolia",
+    "eth_bridge": "0x639Ac649093D13bAe4A674D7aD6b377525fDB486",
+    "solana_bridge": "0x63B168da635ba5E66b4Dc394C994744C051fd0C9",
+    "rootstock_bridge": "0xFe15A62cAD3566A49AfCED2BC9EE73c73f5A20A7"
+  },
+
+  "hub_chain": {
+    "mainnet": {
+      "chain_id": 4102,
+      "rpc_url": "http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc",
+      "transaction_registry": "0xa4DfF80B4a1D748BF28BC4A271eD834689Ea3407",
+      "rollup_da": "0xe336d36FacA76840407e6836d26119E1EcE0A2b4"
+    },
+    "testnet": {
+      "chain_id": 41021,
+      "rpc_url": "http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc",
+      "transaction_registry": "0x4Ac1d98D9cEF99EC6546dEd4Bd550b0b287aaD6D",
+      "rollup_da": "0xA4cD3b0Eb6E5Ab5d8CE4065BcCD70040ADAB1F00"
+    }
+  },
+
+  "core_contracts": {
+    "network": "sepolia",
+    "shielded_pool": "0x688e2C8dF27C925bdCBa5c7DFafD939A760d0466",
+    "commitment_tree": "0xedF026f2DA00e4b693b99AdB17bB3Cad01330b25",
+    "zk_verifier": "0x176A451EaABfFB08DDe514C2dA9F56BBAd12919B"
+  },
+
+  "account_abstraction": {
+    "entry_point": "0x52B68a06E8De47A2362885D9859b46D7e550EF8a",
+    "account_factory": "0x67e86D82f89199DD1BC2Bff9D2EA9FCF1E58aB92",
+    "paymaster": "0x6B83455076ce7040142eECE310d29ed534D8eD59"
+  },
+
+  "buffer_recovery": {
+    "note": "Ephemeral buffer keypair from a failed Solana deploy attempt",
+    "seed_phrase": "arrive mystery suggest bamboo entire wedding maze garage flash grocery device identify"
+  }
+}

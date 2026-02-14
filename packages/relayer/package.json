@@ -1,0 +1,26 @@
+{
+  "name": "@cash-io/relayer",
+  "version": "1.0.0",
+  "description": "Cross-chain bridge relayer for Cash.io",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "relay:sepolia": "tsx src/index.ts --chain sepolia",
+    "relay:rsk": "tsx src/index.ts --chain rskTestnet",
+    "relay:arbitrum": "tsx src/index.ts --chain arbitrumSepolia",
+    "relay:all": "tsx src/index.ts --all"
+  },
+  "dependencies": {
+    "ethers": "^6.9.0",
+    "dotenv": "^17.2.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0",
+    "@types/node": "^20.10.0"
+  }
+}

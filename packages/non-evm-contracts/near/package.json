@@ -1,0 +1,17 @@
+{
+  "name": "@cash-io/near-bridge",
+  "version": "1.0.0",
+  "description": "Cash.io Bridge Contract for NEAR Protocol",
+  "scripts": {
+    "build": "cargo build --target wasm32-unknown-unknown --release",
+    "build:contract": "RUSTFLAGS='-C link-arg=-s' cargo build --target wasm32-unknown-unknown --release && mkdir -p res && cp target/wasm32-unknown-unknown/release/cashio_bridge_near.wasm res/",
+    "test": "cargo test",
+    "deploy:testnet": "near deploy --accountId cashio.testnet --wasmFile res/cashio_bridge_near.wasm",
+    "deploy:mainnet": "near deploy --accountId cashio.near --wasmFile res/cashio_bridge_near.wasm",
+    "init:testnet": "near call cashio.testnet new '{\"owner_id\": \"cashio.testnet\", \"hub_chain_id\": \"999888777\", \"guardian_threshold\": 1}' --accountId cashio.testnet"
+  },
+  "devDependencies": {
+    "near-api-js": "^4.0.0",
+    "typescript": "^5.3.3"
+  }
+}

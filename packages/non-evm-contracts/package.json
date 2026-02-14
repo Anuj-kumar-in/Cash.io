@@ -1,0 +1,44 @@
+{
+  "name": "@cash-io/non-evm-contracts",
+  "version": "1.0.0",
+  "description": "Cash.io Bridge Contracts for Non-EVM Chains (Solana, Sui, NEAR)",
+  "private": true,
+  "workspaces": [
+    "solana",
+    "sui",
+    "near"
+  ],
+  "scripts": {
+    "install:all": "npm run install:tools && npm install",
+    "install:tools": "npm run install:solana && npm run install:sui && npm run install:near",
+    "install:solana": "echo 'Install Solana CLI: sh -c \"$(curl -sSfL https://release.solana.com/v1.18.0/install)\" && cargo install --git https://github.com/coral-xyz/anchor anchor-cli --locked'",
+    "install:sui": "echo 'Install Sui CLI: cargo install --locked --git https://github.com/MystenLabs/sui.git --branch mainnet-v1.24.0 sui'",
+    "install:near": "echo 'Install NEAR CLI: npm install -g near-cli-rs && rustup target add wasm32-unknown-unknown'",
+    "build:solana": "cd solana && anchor build",
+    "build:sui": "cd sui && sui move build",
+    "build:near": "cd near && RUSTFLAGS='-C link-arg=-s' cargo build --target wasm32-unknown-unknown --release && mkdir -p res && cp target/wasm32-unknown-unknown/release/cashio_bridge_near.wasm res/",
+    "build:all": "npm run build:solana && npm run build:sui && npm run build:near",
+    "test:solana": "cd solana && anchor test",
+    "test:sui": "cd sui && sui move test",
+    "test:near": "cd near && cargo test",
+    "test:all": "npm run test:solana && npm run test:sui && npm run test:near",
+    "deploy:solana:devnet": "cd solana && anchor deploy --provider.cluster devnet",
+    "deploy:solana:mainnet": "cd solana && anchor deploy --provider.cluster mainnet",
+    "deploy:sui:testnet": "cd sui && sui client publish --gas-budget 100000000",
+    "deploy:sui:mainnet": "cd sui && sui client publish --gas-budget 100000000 --skip-dependency-verification",
+    "deploy:near:testnet": "cd near && near deploy --accountId cashio.testnet --wasmFile res/cashio_bridge_near.wasm",
+    "deploy:near:mainnet": "cd near && near deploy --accountId cashio.near --wasmFile res/cashio_bridge_near.wasm",
+    "deploy:all:testnet": "npm run deploy:solana:devnet && npm run deploy:sui:testnet && npm run deploy:near:testnet",
+    "deploy:all:mainnet": "npm run deploy:solana:mainnet && npm run deploy:sui:mainnet && npm run deploy:near:mainnet"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
+    "@mysten/sui.js": "^0.54.1",
+    "@solana/web3.js": "^1.98.4",
+    "near-api-js": "^4.0.4",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.14"
+  }
+}

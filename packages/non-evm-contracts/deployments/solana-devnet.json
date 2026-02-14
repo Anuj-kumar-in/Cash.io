@@ -1,0 +1,9 @@
+{
+  "programId": "FeRHaZXb3tbmjWWSwZXQX1HH7DSvAM7nR3mdSxN6VjpJ",
+  "network": "devnet",
+  "chain": "solana",
+  "rpcUrl": "https://api.devnet.solana.com",
+  "deploySignature": "5qe9knG9GAhSyBZJ9XEAeozKjdPppRnAm9Ei3jrSAGGF4AsYemWgdXV5E5ot5CvjTBrFTYFzP6vpoqKBbJ8Nt9v4",
+  "deployer": "8nJQQimAAkdKQwZTLosjgNJwWqWQr5R2577475SyF2dz",
+  "timestamp": "2026-02-09T00:00:00Z"
+}

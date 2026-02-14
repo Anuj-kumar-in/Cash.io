@@ -12,6 +12,7 @@ import Shield from './pages/Shield';
 import Transfer from './pages/Transfer';
 import Bridge from './pages/Bridge';
 import Settings from './pages/Settings';
+import HubTest from './pages/HubTest';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -31,37 +32,38 @@ function App() {
           <NetworkModeProvider>
             <SDKProvider>
               <BrowserRouter>
-              <div className="noise-overlay" />
-              <Routes>
-                {/* Public Landing Page */}
-                <Route path="/" element={<Landing />} />
+                <div className="noise-overlay" />
+                <Routes>
+                  {/* Public Landing Page */}
+                  <Route path="/" element={<Landing />} />
 
-                {/* App Routes with Layout */}
-                <Route path="/app" element={<Layout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="shield" element={<Shield />} />
-                  <Route path="transfer" element={<Transfer />} />
-                  <Route path="bridge" element={<Bridge />} />
-                  <Route path="settings" element={<Settings />} />
-                </Route>
+                  {/* App Routes with Layout */}
+                  <Route path="/app" element={<Layout />}>
+                    <Route index element={<Dashboard />} />
+                    <Route path="shield" element={<Shield />} />
+                    <Route path="transfer" element={<Transfer />} />
+                    <Route path="bridge" element={<Bridge />} />
+                    <Route path="settings" element={<Settings />} />
+                    <Route path="hub-test" element={<HubTest />} />
+                  </Route>
 
-                {/* Legacy routes - redirect to /app */}
-                <Route path="/shield" element={<Layout />}>
-                  <Route index element={<Shield />} />
-                </Route>
-                <Route path="/transfer" element={<Layout />}>
-                  <Route index element={<Transfer />} />
-                </Route>
-                <Route path="/bridge" element={<Layout />}>
-                  <Route index element={<Bridge />} />
-                </Route>
-                <Route path="/settings" element={<Layout />}>
-                  <Route index element={<Settings />} />
-                </Route>
-              </Routes>
-            </BrowserRouter>
-          </SDKProvider>
-        </NetworkModeProvider>
+                  {/* Legacy routes - redirect to /app */}
+                  <Route path="/shield" element={<Layout />}>
+                    <Route index element={<Shield />} />
+                  </Route>
+                  <Route path="/transfer" element={<Layout />}>
+                    <Route index element={<Transfer />} />
+                  </Route>
+                  <Route path="/bridge" element={<Layout />}>
+                    <Route index element={<Bridge />} />
+                  </Route>
+                  <Route path="/settings" element={<Layout />}>
+                    <Route index element={<Settings />} />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </SDKProvider>
+          </NetworkModeProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>
