@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useAccount, useBalance, useChainId, useSwitchChain } from 'wagmi';
-import { formatEther, parseEther } from 'viem';
+import { parseEther } from 'viem';
 import {
     ArrowRightLeft,
     ChevronDown,
@@ -15,14 +15,12 @@ import {
     AlertCircle,
     Copy,
     Search,
-    Filter,
-    Bitcoin,
     Download,
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
 import { useNetworkMode } from '../hooks/useNetworkMode';
 import { WalletModal } from '../components/WalletModal';
-import { supportedChains, type ChainInfo, getChainById, type ChainCategory } from '../config/chains';
+import { supportedChains, type ChainInfo, type ChainCategory } from '../config/chains';
 import { cashSubnet } from '../config/wagmi';
 
 export default function Bridge() {
@@ -30,7 +28,7 @@ export default function Bridge() {
     const { data: balance } = useBalance({ address });
     const chainId = useChainId();
     const { switchChain, isPending: isSwitching } = useSwitchChain();
-    const { bridge, deposit, isLoading: sdkLoading, error: sdkError } = useSDK();
+    const { bridge, isLoading: sdkLoading, error: sdkError } = useSDK();
     const { isTestnet } = useNetworkMode();
 
     const [sourceChain, setSourceChain] = useState<ChainInfo | null>(null);
