@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { useAccount } from 'wagmi';
 import {
     Shield,
@@ -24,6 +25,8 @@ import {
     MessageCircle,
     Sun,
     Moon,
+    AlertCircle,
+    X,
 } from 'lucide-react';
 import { WalletModal } from '../components/WalletModal';
 import { supportedChains } from '../config/chains';
@@ -37,6 +40,21 @@ export default function Landing() {
     const [scrollY, setScrollY] = useState(0);
     const [activeFaq, setActiveFaq] = useState<number | null>(null);
     const [hoveredChain, setHoveredChain] = useState<string | null>(null);
+    const [isNoticeOpen, setIsNoticeOpen] = useState(false);
+
+    // Show notice on mount
+    useEffect(() => {
+        const hasSeenNotice = sessionStorage.getItem('hasSeenPhaseIntegrationNotice');
+        if (!hasSeenNotice) {
+            const timer = setTimeout(() => setIsNoticeOpen(true), 1500);
+            return () => clearTimeout(timer);
+        }
+    }, []);
+
+    const closeNotice = () => {
+        setIsNoticeOpen(false);
+        sessionStorage.setItem('hasSeenPhaseIntegrationNotice', 'true');
+    };
 
     // Parallax effect
     useEffect(() => {
@@ -634,6 +652,54 @@ export default function Landing() {
             </footer>
 
             <WalletModal isOpen={isWalletModalOpen} onClose={() => setIsWalletModalOpen(false)} />
+
+            {/* Phase Integration Notice Popup */}
+            {isNoticeOpen && createPortal(
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeNotice} />
+                    <div className="relative bg-[var(--color-secondary)] border border-[var(--color-border)] rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-scale-in">
+                        <div className="p-6 md:p-8">
+                            <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mb-6">
+                                <AlertCircle className="text-amber-600" size={28} />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-4">Phase Integration Active</h2>
+                            <p className="text-[var(--color-muted)] mb-6 leading-relaxed">
+                                Cash.io is currently in its <strong>Frontend & AI Agent Integration Phase</strong>.
+                                We are actively syncing cross-chain bridges and real-time ZK proof coordinators.
+                                <br /><br />
+                                During this period, you may experience:
+                            </p>
+                            <ul className="space-y-3 mb-8">
+                                <li className="flex items-start gap-3 text-sm">
+                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                    <span>Experimental cross-chain transfers & bridging</span>
+                                </li>
+                                <li className="flex items-start gap-3 text-sm">
+                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                    <span>Intermittent AI Agent responsiveness</span>
+                                </li>
+                                <li className="flex items-start gap-3 text-sm">
+                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                    <span>Ongoing smart contract coordination checks</span>
+                                </li>
+                            </ul>
+                            <button
+                                onClick={closeNotice}
+                                className="btn btn-primary w-full py-4 text-lg font-bold"
+                            >
+                                I Understand
+                            </button>
+                        </div>
+                        <button
+                            onClick={closeNotice}
+                            className="absolute top-4 right-4 p-2 hover:bg-[var(--color-subtle)] rounded-lg transition-colors text-[var(--color-muted)]"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 }
