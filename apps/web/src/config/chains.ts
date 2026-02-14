@@ -13,7 +13,7 @@ export const cashSubnet = defineChain({
     name: 'Cash.io Subnet',
     nativeCurrency: { name: 'CIO Token', symbol: 'CIO', decimals: 18 },
     rpcUrls: {
-        default: { http: ['http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc'] },
+        default: { http: ['http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc'] },
     },
     blockExplorers: {
         default: { name: 'Cash Explorer', url: 'https://explorer.cash.io' },

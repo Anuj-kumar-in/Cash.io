@@ -15,7 +15,6 @@ import {
     FlaskConical,
     Rocket,
     Plus,
-    TestTube,
 } from 'lucide-react';
 import { WalletButton } from './WalletModal';
 import { AddSubnetModal } from './AddSubnetModal';
@@ -30,6 +29,7 @@ const navigation = [
     { name: 'Transfer', href: '/app/transfer', icon: ArrowLeftRight },
     { name: 'Bridge', href: '/app/bridge', icon: Globe },
     { name: 'Settings', href: '/app/settings', icon: Settings },
+    { name: 'Sandbox', href: '/app/sandbox', icon: FlaskConical },
 ];
 
 export default function Layout() {
@@ -40,7 +40,7 @@ export default function Layout() {
     const chainId = useChainId();
     const { isLoading: sdkLoading } = useSDK();
     const { isDark, toggleTheme } = useTheme();
-    const { networkMode, toggleNetworkMode, isTestnet } = useNetworkMode();
+    const { toggleNetworkMode, isTestnet } = useNetworkMode();
 
     const currentChain = getChainById(chainId);
 
@@ -91,16 +91,14 @@ export default function Layout() {
                             {/* Hub Chain Status */}
                             <button
                                 onClick={() => setSubnetModalOpen(true)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                                    isTestnet 
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${isTestnet
                                         ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
                                         : 'bg-purple-500/10 text-purple-600 hover:bg-purple-500/20'
-                                }`}
+                                    }`}
                                 title={`Click to add Cash.io ${isTestnet ? 'Testnet' : 'Hub'} to MetaMask`}
                             >
-                                <div className={`w-2 h-2 rounded-full animate-pulse ${
-                                    isTestnet ? 'bg-amber-500' : 'bg-purple-500'
-                                }`} />
+                                <div className={`w-2 h-2 rounded-full animate-pulse ${isTestnet ? 'bg-amber-500' : 'bg-purple-500'
+                                    }`} />
                                 <span className="hidden sm:inline">{isTestnet ? 'TestHub' : 'Hub'}</span>
                                 <Plus size={14} className="opacity-60" />
                             </button>
@@ -108,11 +106,10 @@ export default function Layout() {
                             {/* Network Mode Toggle */}
                             <button
                                 onClick={toggleNetworkMode}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                                    isTestnet 
-                                        ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20' 
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${isTestnet
+                                        ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
                                         : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
-                                }`}
+                                    }`}
                                 title={`Switch to ${isTestnet ? 'Mainnet' : 'Testnet'}`}
                             >
                                 {isTestnet ? (
@@ -193,17 +190,22 @@ export default function Layout() {
                             >
                                 Documentation <ExternalLink size={14} />
                             </a>
+                            <NavLink
+                                to="/app/sandbox"
+                                className="flex items-center gap-1 text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors"
+                            >
+                                SDK Sandbox <FlaskConical size={14} />
+                            </NavLink>
                         </div>
                         <div className="flex items-center gap-4">
                             {isConnected && currentChain && (
                                 <div className="flex items-center gap-3">
                                     <span className="badge badge-neutral">{currentChain.icon} {currentChain.name}</span>
                                     <span className="text-[var(--color-muted)]">•</span>
-                                    <span className={`badge border ${
-                                        isTestnet 
-                                            ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                                            : 'bg-purple-500/10 text-purple-600 border-purple-500/20'
-                                    }`}>
+                                    <span className={`badge border ${isTestnet
+                                        ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                                        : 'bg-purple-500/10 text-purple-600 border-purple-500/20'
+                                        }`}>
                                         {isTestnet ? '🧪' : '💰'} Cash.io {isTestnet ? 'Testnet' : 'Hub'}
                                     </span>
                                 </div>
@@ -213,13 +215,12 @@ export default function Layout() {
                     </div>
                 </div>
             </footer>
-            
+
             {/* Add Subnet Modal */}
-            <AddSubnetModal 
-                isOpen={subnetModalOpen} 
-                onClose={() => setSubnetModalOpen(false)} 
+            <AddSubnetModal
+                isOpen={subnetModalOpen}
+                onClose={() => setSubnetModalOpen(false)}
             />
         </div>
     );
 }
-

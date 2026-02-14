@@ -1,7 +1,7 @@
 # Cash.io - Multi-Chain ZK-Privacy dApp
 
 ## 🏗️ Architecture Overview
-
+POA
 Cash.io is a cutting-edge decentralized application that provides **zero-fee**, **privacy-preserving** cross-chain transactions across Ethereum, Solana, and Bitcoin (via Rootstock) networks, all rolled up on an **Avalanche Subnet-EVM** hub chain.
 
 ```

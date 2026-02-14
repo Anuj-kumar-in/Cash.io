@@ -27,7 +27,7 @@ const config: HardhatUserConfig = {
       accounts: process.env.VITE_DEPLOYER_PRIVATE_KEY ? [process.env.VITE_DEPLOYER_PRIVATE_KEY] : [],
     },
     cashiosubnet: {
-      url: "http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc",
+      url: "http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc",
       chainId: 4102,
       accounts: ["56289e99c94b6912bfc12adc093c9b51124f0dc54ac7a766b2bc5ccf558d8027"],
       gas: 30000000, // 30M gas limit for subnet

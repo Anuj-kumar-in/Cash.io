@@ -55,6 +55,7 @@ export default function Dashboard() {
     const recentTransactions = transactions.map(tx => ({
         type: tx.type,
         amount: formatEther(tx.amount),
+        symbol: getChainById(tx.chainId)?.symbol || 'ETH',
         status: tx.status === 'confirmed' ? 'confirmed' : 'pending',
         chain: getChainById(tx.chainId)?.name.split(' ')[0] || 'Unknown',
         time: new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -146,7 +147,7 @@ export default function Dashboard() {
                         <span className="text-3xl font-bold font-mono">
                             {hideBalances ? '••••' : (balance?.value ? parseFloat(formatEther(balance.value)).toFixed(4) : '0.0000')}
                         </span>
-                        <span className="text-[var(--color-muted)]">{balance?.symbol || 'ETH'}</span>
+                        <span className="text-[var(--color-muted)]">{balance?.symbol || currentChain?.symbol || 'ETH'}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-4">
                         <Link to="/shield" className="btn btn-primary btn-sm flex-1">
@@ -169,7 +170,7 @@ export default function Dashboard() {
                         <span className="text-3xl font-bold font-mono">
                             {hideBalances ? '••••' : (isNaN(parseFloat(shieldedBalanceFormatted)) ? '0.0000' : parseFloat(shieldedBalanceFormatted).toFixed(4))}
                         </span>
-                        <span className="text-white/60">ETH</span>
+                        <span className="text-white/60">{currentChain?.symbol || 'ETH'}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-4">
                         <Link to="/transfer" className="btn btn-sm flex-1 bg-white text-black hover:bg-white/90">
@@ -198,7 +199,7 @@ export default function Dashboard() {
                                             {i + 1}
                                         </div>
                                         <span className="font-mono text-sm">
-                                            {hideBalances ? '••••' : formatEther(note.amount)} ETH
+                                            {hideBalances ? '••••' : formatEther(note.amount)} {getChainById(note.chainId)?.symbol || 'ETH'}
                                         </span>
                                     </div>
                                     <span className="text-xs text-[var(--color-muted)]">
@@ -236,16 +237,15 @@ export default function Dashboard() {
                             className={`card ${action.color} group hover:scale-[1.02] transition-transform`}
                         >
                             <action.icon size={24} className={
-                                action.color === 'bg-black text-white' ? '' : 
-                                action.color.includes('purple') ? 'text-purple-600' :
-                                'text-[var(--color-muted)]'
+                                action.color === 'bg-black text-white' ? '' :
+                                    action.color.includes('purple') ? 'text-purple-600' :
+                                        'text-[var(--color-muted)]'
                             } />
                             <h3 className="font-semibold mt-3">{action.label}</h3>
-                            <p className={`text-sm mt-1 ${
-                                action.color === 'bg-black text-white' ? 'text-white/60' : 
+                            <p className={`text-sm mt-1 ${action.color === 'bg-black text-white' ? 'text-white/60' :
                                 action.color.includes('purple') ? 'text-purple-500' :
-                                'text-[var(--color-muted)]'
-                            }`}>
+                                    'text-[var(--color-muted)]'
+                                }`}>
                                 {action.desc}
                             </p>
                             <ChevronRight size={16} className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -293,16 +293,14 @@ export default function Dashboard() {
             {/* Hub Chain Status */}
             <div>
                 <h2 className="text-lg font-bold mb-4">Hub Chain Status</h2>
-                <div className={`card bg-gradient-to-r border ${
-                    isTestnet 
-                        ? 'from-amber-500/10 to-orange-500/10 border-amber-500/20'
-                        : 'from-purple-500/10 to-blue-500/10 border-purple-500/20'
-                }`}>
+                <div className={`card bg-gradient-to-r border ${isTestnet
+                    ? 'from-amber-500/10 to-orange-500/10 border-amber-500/20'
+                    : 'from-purple-500/10 to-blue-500/10 border-purple-500/20'
+                    }`}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                isTestnet ? 'bg-amber-500/20' : 'bg-purple-500/20'
-                            }`}>
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isTestnet ? 'bg-amber-500/20' : 'bg-purple-500/20'
+                                }`}>
                                 <span className="text-2xl">{isTestnet ? '🧪' : '💰'}</span>
                             </div>
                             <div>
@@ -321,15 +319,13 @@ export default function Dashboard() {
                     </div>
                     <div className="mt-4 grid grid-cols-3 gap-4">
                         <div className="text-center">
-                            <div className={`text-2xl font-bold ${
-                                isTestnet ? 'text-amber-600' : 'text-purple-600'
-                            }`}>{transactions.length}</div>
+                            <div className={`text-2xl font-bold ${isTestnet ? 'text-amber-600' : 'text-purple-600'
+                                }`}>{transactions.length}</div>
                             <div className="text-xs text-[var(--color-muted)]">Recorded Txs</div>
                         </div>
                         <div className="text-center">
-                            <div className={`text-2xl font-bold ${
-                                isTestnet ? 'text-amber-600' : 'text-purple-600'
-                            }`}>{isTestnet ? '41021' : '4102'}</div>
+                            <div className={`text-2xl font-bold ${isTestnet ? 'text-amber-600' : 'text-purple-600'
+                                }`}>{isTestnet ? '41021' : '4102'}</div>
                             <div className="text-xs text-[var(--color-muted)]">Chain ID</div>
                         </div>
                         <div className="text-center">
@@ -353,11 +349,11 @@ export default function Dashboard() {
                         recentTransactions.map((tx, i) => (
                             <div key={i} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'shield' ? 'bg-[var(--color-success)]/10' :
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'deposit' ? 'bg-[var(--color-success)]/10' :
                                         tx.type === 'transfer' ? 'bg-black text-white' :
                                             'bg-[var(--color-subtle)]'
                                         }`}>
-                                        {tx.type === 'shield' && <ArrowDownLeft size={18} className="text-[var(--color-success)]" />}
+                                        {tx.type === 'deposit' && <ArrowDownLeft size={18} className="text-[var(--color-success)]" />}
                                         {tx.type === 'transfer' && <Send size={18} />}
                                         {tx.type === 'bridge' && <Globe size={18} />}
                                     </div>
@@ -371,7 +367,7 @@ export default function Dashboard() {
                                 </div>
                                 <div className="text-right">
                                     <div className="font-mono font-medium">
-                                        {hideBalances ? '••••' : tx.amount} ETH
+                                        {hideBalances ? '••••' : tx.amount} {tx.symbol}
                                     </div>
                                     <div className="flex items-center gap-1 text-xs justify-end">
                                         {tx.status === 'confirmed' ? (

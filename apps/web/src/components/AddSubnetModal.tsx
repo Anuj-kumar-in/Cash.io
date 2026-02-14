@@ -24,7 +24,7 @@ const MAINNET_SUBNET_CONFIG = {
         symbol: 'CIO',
         decimals: 18,
     },
-    rpcUrls: ['http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc'],
+    rpcUrls: [import.meta.env.VITE_HUB_RPC_URL || 'http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc'],
     blockExplorerUrls: ['https://explorer.cash.io'],
     iconUrls: ['https://cash.io/icon.png'],
 };
@@ -38,7 +38,7 @@ const TESTNET_SUBNET_CONFIG = {
         symbol: 'SepoliaCIO',
         decimals: 18,
     },
-    rpcUrls: ['http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc'],
+    rpcUrls: [import.meta.env.VITE_TESTNET_HUB_RPC_URL || 'http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc'],
     blockExplorerUrls: ['https://testnet-explorer.cash.io'],
     iconUrls: ['https://testnet.cash.io/icon.png'],
 };

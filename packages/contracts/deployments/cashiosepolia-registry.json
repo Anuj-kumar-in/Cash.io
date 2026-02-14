@@ -1,0 +1,50 @@
+{
+  "network": "cashiosepolia",
+  "registryAddress": "0x95CA0a568236fC7413Cd2b794A7da24422c2BBb6",
+  "deployer": "0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC",
+  "registeredBridges": [
+    {
+      "chainId": 421614,
+      "bridgeAddress": "0x639Ac649093D13bAe4A674D7aD6b377525fDB486",
+      "chainName": "arbitrumSepolia",
+      "symbol": "ETH",
+      "category": "evm"
+    },
+    {
+      "chainId": 990000,
+      "bridgeAddress": "0x63B168da635ba5E66b4Dc394C994744C051fd0C9",
+      "chainName": "Solana Devnet",
+      "symbol": "SOL",
+      "category": "solana"
+    },
+    {
+      "chainId": 84532,
+      "bridgeAddress": "0x639Ac649093D13bAe4A674D7aD6b377525fDB486",
+      "chainName": "baseSepolia",
+      "symbol": "ETH",
+      "category": "evm"
+    },
+    {
+      "chainId": 11155420,
+      "bridgeAddress": "0x639Ac649093D13bAe4A674D7aD6b377525fDB486",
+      "chainName": "optimismSepolia",
+      "symbol": "ETH",
+      "category": "evm"
+    },
+    {
+      "chainId": 80002,
+      "bridgeAddress": "0x639Ac649093D13bAe4A674D7aD6b377525fDB486",
+      "chainName": "polygonAmoy",
+      "symbol": "ETH",
+      "category": "evm"
+    },
+    {
+      "chainId": 31,
+      "bridgeAddress": "0x639Ac649093D13bAe4A674D7aD6b377525fDB486",
+      "chainName": "rskTestnet",
+      "symbol": "ETH",
+      "category": "evm"
+    }
+  ],
+  "deployedAt": "2026-02-14T11:50:49.493Z"
+}

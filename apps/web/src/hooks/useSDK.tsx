@@ -64,6 +64,7 @@ interface SDKContextType {
     error: string | null;
     shieldedBalance: bigint;
     notes: CashNote[];
+    allNotes: CashNote[];
     transactions: Transaction[];
     currentChain: ChainInfo | undefined;
 
@@ -133,7 +134,7 @@ function getHubChainConfig(isTestnet: boolean) {
     if (isTestnet) {
         return {
             id: 41021,
-            rpcUrl: 'http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc',
+            rpcUrl: (import.meta.env.VITE_TESTNET_HUB_RPC_URL as string) || 'http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc',
             registryAddress: (import.meta.env.VITE_TESTNET_TRANSACTION_REGISTRY_ADDRESS || '0x4Ac1d98D9cEF99EC6546dEd4Bd550b0b287aaD6D') as `0x${string}`,
             dataAvailabilityAddress: (import.meta.env.VITE_TESTNET_ROLLUP_DATA_AVAILABILITY_ADDRESS || '0xA4cD3b0Eb6E5Ab5d8CE4065BcCD70040ADAB1F00') as `0x${string}`,
             name: 'Cash.io Testnet',
@@ -143,7 +144,7 @@ function getHubChainConfig(isTestnet: boolean) {
 
     return {
         id: 4102,
-        rpcUrl: 'http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc',
+        rpcUrl: (import.meta.env.VITE_HUB_RPC_URL as string) || 'http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc',
         registryAddress: (import.meta.env.VITE_TRANSACTION_REGISTRY_ADDRESS || '0xa4DfF80B4a1D748BF28BC4A271eD834689Ea3407') as `0x${string}`,
         dataAvailabilityAddress: (import.meta.env.VITE_ROLLUP_DATA_AVAILABILITY_ADDRESS || '0xe336d36FacA76840407e6836d26119E1EcE0A2b4') as `0x${string}`,
         name: 'Cash.io Hub',
@@ -287,30 +288,33 @@ export function SDKProvider({ children }: SDKProviderProps) {
     const [isInitialized, setIsInitialized] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [notes, setNotes] = useState<CashNote[]>([]);
+    const [allNotes, setAllNotes] = useState<CashNote[]>([]); // Source of truth for all notes
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [shieldedBalance, setShieldedBalance] = useState<bigint>(0n);
     const [chainBalances, setChainBalances] = useState<Record<number | string, bigint>>({});
 
     const currentChain = getChainById(chainId);
 
-    // Initialize SDK when wallet connects
+    // Derived: Current chain's notes (exposed to components)
+    const notes = allNotes.filter(n => n.chainId === chainId);
+
+    // Initialize SDK when wallet connects or chainId changes
     useEffect(() => {
         if (isConnected && address) {
             initializeSDK();
         } else {
             setIsInitialized(false);
-            setNotes([]);
+            setAllNotes([]);
             setTransactions([]);
             setShieldedBalance(0n);
             setChainBalances({});
         }
-    }, [isConnected, address]);
+    }, [isConnected, address, chainId]); // Added chainId to dependencies
 
     // Recalculate balances when notes change
     useEffect(() => {
         calculateBalances();
-    }, [notes]);
+    }, [allNotes, chainId]);
 
     const initializeSDK = async () => {
         try {
@@ -325,16 +329,19 @@ export function SDKProvider({ children }: SDKProviderProps) {
                     return value;
                 });
                 // Deduplicate notes by commitment and filter out zero-amount notes
-                const uniqueNotes = parsedNotes.filter((note, index, self) =>
+                const uniqueNotes = parsedNotes.filter((note: CashNote, index: number, self: CashNote[]) =>
                     index === self.findIndex(n => n.commitment === note.commitment) && note.amount > 0n
                 );
+                setAllNotes(uniqueNotes);
 
-                // Verify notes on-chain: remove notes whose nullifier is already spent
+                // Verify notes on-chain ONLY for the current network
                 const shieldedPoolAddress = import.meta.env.VITE_SHIELDED_POOL_ADDRESS as `0x${string}`;
-                let validNotes = uniqueNotes;
                 if (shieldedPoolAddress && publicClient) {
+                    const currentNetworkNotes = uniqueNotes.filter(n => n.chainId === chainId);
+                    const otherNetworkNotes = uniqueNotes.filter(n => n.chainId !== chainId);
+
                     const checks = await Promise.all(
-                        uniqueNotes.map(async (note) => {
+                        currentNetworkNotes.map(async (note) => {
                             try {
                                 const nullifier = keccak256(note.secret as `0x${string}`);
                                 const isSpent = await publicClient.readContract({
@@ -353,28 +360,32 @@ export function SDKProvider({ children }: SDKProviderProps) {
                                     })
                                     : false;
                                 return { note, spent: isSpent as boolean, validRoot: isKnownRoot as boolean };
-                            } catch {
+                            } catch (e) {
+                                console.warn(`Failed to verify note ${note.commitment.slice(0, 8)} on chain ${chainId}:`, e);
                                 // If contract call fails, keep the note but mark it uncertain
                                 return { note, spent: false, validRoot: true };
                             }
                         })
                     );
+
                     // Only keep notes that are NOT spent AND have a valid root on the current contract
-                    validNotes = checks
+                    const validCurrentNotes = checks
                         .filter(c => !c.spent && c.validRoot)
                         .map(c => c.note);
-                }
 
-                setNotes(validNotes);
-                // Save cleaned list back
-                if (validNotes.length !== parsedNotes.length) {
-                    localStorage.setItem(
-                        `cash-notes-${address}`,
-                        JSON.stringify(validNotes, (key, value) => {
-                            if (key === 'amount') return value.toString();
-                            return value;
-                        })
-                    );
+                    const finalNotes = [...otherNetworkNotes, ...validCurrentNotes];
+                    setAllNotes(finalNotes);
+
+                    // Save cleaned list back
+                    if (finalNotes.length !== parsedNotes.length) {
+                        localStorage.setItem(
+                            `cash-notes-${address}`,
+                            JSON.stringify(finalNotes, (key, value) => {
+                                if (key === 'amount') return value.toString();
+                                return value;
+                            })
+                        );
+                    }
                 }
             }
 
@@ -397,23 +408,24 @@ export function SDKProvider({ children }: SDKProviderProps) {
     };
 
     const calculateBalances = useCallback(() => {
-        // Calculate total shielded balance
-        const total = notes.reduce((sum, note) => sum + note.amount, 0n);
+        // Calculate filtered shielded balance (only for current chain)
+        const currentNotes = allNotes.filter(n => n.chainId === chainId);
+        const total = currentNotes.reduce((sum, note) => sum + note.amount, 0n);
         setShieldedBalance(total);
 
         // Calculate per-chain balances
         const perChain: Record<number | string, bigint> = {};
-        notes.forEach(note => {
+        allNotes.forEach(note => {
             const key = note.chainId;
             perChain[key] = (perChain[key] || 0n) + note.amount;
         });
         setChainBalances(perChain);
-    }, [notes]);
+    }, [allNotes, chainId]);
 
     // Save notes to localStorage (filter out zero-amount notes)
-    const saveNotes = useCallback((updatedNotes: CashNote[]) => {
+    const saveAllNotes = useCallback((updatedAllNotes: CashNote[]) => {
         if (address) {
-            const nonZeroNotes = updatedNotes.filter(n => n.amount > 0n);
+            const nonZeroNotes = updatedAllNotes.filter(n => n.amount > 0n);
             localStorage.setItem(
                 `cash-notes-${address}`,
                 JSON.stringify(nonZeroNotes, (key, value) => {
@@ -531,12 +543,12 @@ export function SDKProvider({ children }: SDKProviderProps) {
             }
 
             // Update local state only after tx confirms (check for duplicates)
-            let leafIndex = notes.length;
-            if (!notes.some(n => n.commitment === note.commitment)) {
-                const updatedNotes = [...notes, note];
-                setNotes(updatedNotes);
-                saveNotes(updatedNotes);
-                leafIndex = updatedNotes.length - 1;
+            let leafIndex = allNotes.length;
+            if (!allNotes.some(n => n.commitment === note.commitment)) {
+                const updatedAllNotes = [...allNotes, note];
+                setAllNotes(updatedAllNotes);
+                saveAllNotes(updatedAllNotes);
+                leafIndex = updatedAllNotes.length - 1;
             }
 
             // Record transaction
@@ -567,7 +579,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    }, [walletClient, walletClientLoading, isConnected, publicClient, address, chainId, notes, saveNotes, addTransaction]);
+    }, [walletClient, walletClientLoading, isConnected, publicClient, address, chainId, allNotes, saveAllNotes, addTransaction]);
 
     // Withdraw from shielded pool
     const withdraw = useCallback(async (
@@ -596,12 +608,12 @@ export function SDKProvider({ children }: SDKProviderProps) {
             setError(null);
 
             // Find note
-            const noteIndex = notes.findIndex(n => n.commitment === noteCommitment);
+            const noteIndex = allNotes.findIndex(n => n.commitment === noteCommitment);
             if (noteIndex === -1) {
                 throw new Error('Note not found');
             }
 
-            const note = notes[noteIndex];
+            const note = allNotes[noteIndex];
             const effectiveChainId = targetChainId || note.chainId;
 
             // Generate nullifier from note secret (deterministic)
@@ -625,9 +637,9 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 root = currentRoot as string;
                 // Save it back to the note for future use
                 note.merkleRoot = root;
-                const updatedNotesList = [...notes];
+                const updatedNotesList = [...allNotes];
                 updatedNotesList[noteIndex] = note;
-                saveNotes(updatedNotesList);
+                saveAllNotes(updatedNotesList);
             }
             if (!root) {
                 throw new Error('Unable to fetch merkle root. Please check your network connection.');
@@ -687,9 +699,9 @@ export function SDKProvider({ children }: SDKProviderProps) {
             }
 
             // Update local state only after tx confirms
-            const updatedNotes = notes.filter((_, i) => i !== noteIndex);
-            setNotes(updatedNotes);
-            saveNotes(updatedNotes);
+            const updatedAllNotes = allNotes.filter(n => n.commitment !== noteCommitment);
+            setAllNotes(updatedAllNotes);
+            saveAllNotes(updatedAllNotes);
 
             // Record transaction
             addTransaction({
@@ -722,7 +734,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    }, [walletClient, walletClientLoading, isConnected, publicClient, address, notes, saveNotes, addTransaction]);
+    }, [walletClient, walletClientLoading, isConnected, publicClient, address, allNotes, saveAllNotes, addTransaction]);
 
     // Private transfer (2-in-2-out)
     const transfer = useCallback(async (
@@ -752,7 +764,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
 
             // Find input notes
             const inputNotes = inputCommitments.map(c => {
-                const note = notes.find(n => n.commitment === c);
+                const note = allNotes.find(n => n.commitment === c);
                 if (!note) throw new Error(`Note ${c} not found`);
                 return note;
             });
@@ -808,14 +820,14 @@ export function SDKProvider({ children }: SDKProviderProps) {
                 : [outputNotes[1]]; // Only keep change note
 
             // Filter out spent notes and add new ones (with deduplication)
-            const remainingNotes = notes.filter(n => !inputCommitments.includes(n.commitment));
+            const remainingNotes = allNotes.filter(n => !inputCommitments.includes(n.commitment));
             const newUniqueNotes = notesToKeep.filter(newNote =>
                 !remainingNotes.some(n => n.commitment === newNote.commitment)
             );
-            const updatedNotes = remainingNotes.concat(newUniqueNotes);
+            const updatedAllNotes = remainingNotes.concat(newUniqueNotes);
 
-            setNotes(updatedNotes);
-            saveNotes(updatedNotes);
+            setAllNotes(updatedAllNotes);
+            saveAllNotes(updatedAllNotes);
 
             // Record transaction
             addTransaction({
@@ -843,7 +855,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    }, [walletClient, walletClientLoading, isConnected, publicClient, address, notes, saveNotes, createNote, cashSubnet]);
+    }, [walletClient, walletClientLoading, isConnected, publicClient, address, allNotes, saveAllNotes, createNote, cashSubnet]);
 
     // Cross-chain bridge using note-based approach
     // Shield on source chain -> Export note -> Import on dest chain -> Unshield
@@ -932,10 +944,10 @@ export function SDKProvider({ children }: SDKProviderProps) {
             }
 
             // Save the note locally
-            if (!notes.some(n => n.commitment === note.commitment)) {
-                const updatedNotes = [...notes, note];
-                setNotes(updatedNotes);
-                saveNotes(updatedNotes);
+            if (!allNotes.some(n => n.commitment === note.commitment)) {
+                const updatedAllNotes = [...allNotes, note];
+                setAllNotes(updatedAllNotes);
+                saveAllNotes(updatedAllNotes);
             }
 
             // Record transaction
@@ -965,7 +977,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    }, [walletClient, walletClientLoading, isConnected, publicClient, address, notes, saveNotes, createNote, addTransaction]);
+    }, [walletClient, walletClientLoading, isConnected, publicClient, address, allNotes, saveAllNotes, createNote, addTransaction]);
 
     // Legacy bridge function - now uses shieldForBridge
     const bridge = useCallback(async (
@@ -990,17 +1002,17 @@ export function SDKProvider({ children }: SDKProviderProps) {
 
     // Export notes
     const exportNotes = useCallback(() => {
-        return [...notes];
-    }, [notes]);
+        return [...allNotes];
+    }, [allNotes]);
 
     // Import note (with duplicate checking)
     const importNote = useCallback((note: CashNote) => {
-        if (notes.some(n => n.commitment === note.commitment)) {
+        if (allNotes.some(n => n.commitment === note.commitment)) {
             return; // Note already exists
         }
-        const updatedNotes = [...notes, note];
-        setNotes(updatedNotes);
-        saveNotes(updatedNotes);
+        const updatedAllNotes = [...allNotes, note];
+        setAllNotes(updatedAllNotes);
+        saveAllNotes(updatedAllNotes);
 
         // Record note import on hub chain
         // Since this is a local operation, we create a synthetic transaction record
@@ -1027,7 +1039,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
         } catch (hubError) {
             console.warn('Failed to record note import on hub:', hubError);
         }
-    }, [notes, saveNotes, address]);
+    }, [allNotes, saveAllNotes, address]);
 
     // Chain helpers
     const getSupportedChains = useCallback(() => {
@@ -1050,6 +1062,7 @@ export function SDKProvider({ children }: SDKProviderProps) {
         error,
         shieldedBalance,
         notes,
+        allNotes,
         transactions,
         currentChain,
         chainBalances,

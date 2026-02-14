@@ -17,10 +17,11 @@ import {
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
 import { WalletModal } from '../components/WalletModal';
+import { getChainById } from '../config/chains';
 
 export default function Transfer() {
-    const { isConnected, address } = useAccount();
-    const { shieldedBalance, notes, transfer, isLoading: sdkLoading, error: sdkError } = useSDK();
+    const { isConnected } = useAccount();
+    const { shieldedBalance, notes, transfer, isLoading: sdkLoading, error: sdkError, currentChain } = useSDK();
 
     const [amount, setAmount] = useState('');
     const [recipient, setRecipient] = useState('');
@@ -193,7 +194,7 @@ export default function Transfer() {
                                 <div className="space-y-2">
                                     <div className="text-xs text-[var(--color-muted)] font-medium uppercase">Transaction Hash</div>
                                     <div className="flex items-center justify-center gap-2 bg-[var(--color-subtle)] px-4 py-2 rounded-lg font-mono text-sm">
-                                        <span>{lastTxHash.slice(0, 10)}...{lastTxHash.slice(-6)}</span>
+                                        <span>{lastTxHash.slice(0, 10)}...{lastTxHash.slice(-6)}</span> {currentChain?.symbol || 'ETH'}
                                         <button
                                             onClick={() => handleCopy(lastTxHash)}
                                             className="hover:text-[var(--color-muted)] transition-colors"
@@ -309,14 +310,14 @@ export default function Transfer() {
                                                 <span className="font-medium">Note #{i + 1}</span>
                                             </div>
                                             <span className="font-mono font-medium">
-                                                {parseFloat(formatEther(noteItem.amount)).toFixed(4)} ETH
+                                                {parseFloat(formatEther(noteItem.amount)).toFixed(4)} {getChainById(noteItem.chainId)?.symbol || 'ETH'}
                                             </span>
                                         </button>
                                     ))}
                                 </div>
                                 {selectedNotes.length === 2 && (
                                     <div className="mt-2 text-sm text-[var(--color-success)]">
-                                        ✓ Selected total: {parseFloat(formatEther(getSelectedTotal())).toFixed(4)} ETH
+                                        ✓ Selected total: {parseFloat(formatEther(getSelectedTotal())).toFixed(4)} {currentChain?.symbol || 'ETH'}
                                     </div>
                                 )}
                             </div>
@@ -352,12 +353,12 @@ export default function Transfer() {
                                     >
                                         MAX
                                     </button>
-                                    <span className="text-[var(--color-muted)] font-medium">ETH</span>
+                                    <span className="text-[var(--color-muted)] font-medium">{currentChain?.symbol || 'ETH'}</span>
                                 </div>
                             </div>
                             {selectedNotes.length === 2 && amount && (
                                 <div className="mt-2 text-sm text-[var(--color-muted)]">
-                                    Change returned to you: {(parseFloat(formatEther(getSelectedTotal())) - parseFloat(amount)).toFixed(4)} ETH
+                                    Change returned to you: {(parseFloat(formatEther(getSelectedTotal())) - parseFloat(amount)).toFixed(4)} {currentChain?.symbol || 'ETH'}
                                 </div>
                             )}
                         </div>
@@ -429,7 +430,7 @@ export default function Transfer() {
                             <div className="flex items-center justify-between text-sm font-semibold pt-2 border-t border-[var(--color-border)]">
                                 <span>Total Received</span>
                                 <span className="font-mono">
-                                    {amount ? (parseFloat(amount) * 0.999).toFixed(4) : '0.0000'} ETH
+                                    {amount ? (parseFloat(amount) * 0.999).toFixed(4) : '0.0000'} {currentChain?.symbol || 'ETH'}
                                 </span>
                             </div>
                         </div>

@@ -13,6 +13,7 @@ import Transfer from './pages/Transfer';
 import Bridge from './pages/Bridge';
 import Settings from './pages/Settings';
 import HubTest from './pages/HubTest';
+import Sandbox from './pages/Sandbox';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -45,6 +46,7 @@ function App() {
                     <Route path="bridge" element={<Bridge />} />
                     <Route path="settings" element={<Settings />} />
                     <Route path="hub-test" element={<HubTest />} />
+                    <Route path="sandbox" element={<Sandbox />} />
                   </Route>
 
                   {/* Legacy routes - redirect to /app */}

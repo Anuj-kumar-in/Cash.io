@@ -41,10 +41,10 @@ export const cashSubnet = defineChain({
     nativeCurrency: { decimals: 18, name: 'CIO Token', symbol: 'CIO' },
     rpcUrls: {
         default: {
-            http: ['http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc'],
+            http: [import.meta.env.VITE_HUB_RPC_URL || 'http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc'],
         },
         public: {
-            http: ['http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc'],
+            http: [import.meta.env.VITE_HUB_RPC_URL || 'http://127.0.0.1:9654/ext/bc/weCGw5ozNbEzW1CSvyJ15g1ZnLzcpjxKHjhbV1EVMQQKKa2CM/rpc'],
         },
     },
     blockExplorers: {

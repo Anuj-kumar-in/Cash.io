@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
 import { WalletModal } from '../components/WalletModal';
+import { getChainById } from '../config/chains';
 
 type Tab = 'shield' | 'unshield';
 
@@ -33,7 +34,7 @@ export default function Shield() {
 
     const { isConnected, address } = useAccount();
     const { data: balance } = useBalance({ address });
-    const { shieldedBalance, notes, deposit, withdraw, isLoading: sdkLoading, error: sdkError } = useSDK();
+    const { shieldedBalance, notes, deposit, withdraw, isLoading: sdkLoading, error: sdkError, currentChain } = useSDK();
 
     const [txStatus, setTxStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
     const [lastTxHash, setLastTxHash] = useState<string>('');
@@ -263,7 +264,7 @@ export default function Shield() {
                                     <span className="text-xl font-bold">
                                         {parseFloat(maxAmount).toFixed(4)}
                                     </span>
-                                    <span className="text-[var(--color-muted)]">{balance?.symbol || 'ETH'}</span>
+                                    <span className="text-[var(--color-muted)]">{balance?.symbol || currentChain?.symbol || 'ETH'}</span>
                                 </div>
                             </div>
                             <ShieldIcon size={24} className="text-[var(--color-muted)]" />
@@ -288,7 +289,7 @@ export default function Shield() {
                                     <option value="">Select a note...</option>
                                     {notes.map((note, i) => (
                                         <option key={note.commitment} value={note.commitment}>
-                                            Note #{i + 1} - {parseFloat(formatEther(note.amount)).toFixed(4)} ETH
+                                            Note #{i + 1} - {parseFloat(formatEther(note.amount)).toFixed(4)} {getChainById(note.chainId)?.symbol || 'ETH'}
                                         </option>
                                     ))}
                                 </select>
@@ -317,7 +318,7 @@ export default function Shield() {
                                         className="input text-2xl font-mono pr-24"
                                     />
                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                        <span className="text-[var(--color-muted)] font-medium">{balance?.symbol || 'ETH'}</span>
+                                        <span className="text-[var(--color-muted)] font-medium">{balance?.symbol || currentChain?.symbol || 'ETH'}</span>
                                     </div>
                                 </div>
                             ) : (
@@ -329,7 +330,7 @@ export default function Shield() {
                                         disabled
                                     />
                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                        <span className="text-[var(--color-muted)] font-medium">{balance?.symbol || 'ETH'}</span>
+                                        <span className="text-[var(--color-muted)] font-medium">{balance?.symbol || currentChain?.symbol || 'ETH'}</span>
                                     </div>
                                 </div>
                             )}
@@ -373,7 +374,7 @@ export default function Shield() {
                         {/* Fee Estimation */}
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-[var(--color-muted)]">Network Fee</span>
-                            <span className="font-mono">~0.002 ETH</span>
+                            <span className="font-mono">~0.002 {balance?.symbol || 'ETH'}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-[var(--color-muted)]">Relayer Fee</span>
