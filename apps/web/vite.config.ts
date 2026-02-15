@@ -7,7 +7,7 @@ import type { UserConfig } from 'vite';
 // https://vite.dev/config/
 export default defineConfig(({ mode }): UserConfig => {
   return {
-    plugins: [react()],
+    plugins: [react() as any],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
