@@ -1,5 +1,159 @@
+/**
+ * Chain Configurations for Cash.io
+ * Supports EVM chains, Bitcoin sidechains (Rootstock), and Solana
+ */
+
+import { defineChain } from 'viem';
 
 // ============ Custom Chain Definitions ============
+
+// Cash.io Hub Subnet (Avalanche L1)
+export const cashSubnet = defineChain({
+    id: 4102,
+    name: 'Cash.io Subnet',
+    nativeCurrency: { name: 'CIO Token', symbol: 'CIO', decimals: 18 },
+    rpcUrls: {
+        default: { http: [import.meta.env.VITE_TESTNET_HUB_RPC_URL || 'http://127.0.0.1:9656/ext/bc/2kncNH6LugUTEWwiV87AijZhN2zd9mek77AMzMA93Ak6QTcvKN/rpc'] },
+    },
+    blockExplorers: {
+        default: { name: 'Cash Explorer', url: 'https://explorer.cash.io' },
+    },
+});
+
+// ============ Rootstock (Bitcoin Sidechain) ============
+
+export const rootstock = defineChain({
+    id: 30,
+    name: 'Rootstock',
+    nativeCurrency: { name: 'Smart Bitcoin', symbol: 'RBTC', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['https://public-node.rsk.co'] },
+    },
+    blockExplorers: {
+        default: { name: 'RSK Explorer', url: 'https://explorer.rsk.co' },
+    },
+});
+
+export const rootstockTestnet = defineChain({
+    id: 31,
+    name: 'Rootstock Testnet',
+    nativeCurrency: { name: 'Test Smart Bitcoin', symbol: 'tRBTC', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['https://public-node.testnet.rsk.co'] },
+    },
+    blockExplorers: {
+        default: { name: 'RSK Testnet Explorer', url: 'https://explorer.testnet.rsk.co' },
+    },
+    testnet: true,
+});
+
+// ============ BOB (Build on Bitcoin) ============
+
+export const bob = defineChain({
+    id: 60808,
+    name: 'BOB',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['https://rpc.gobob.xyz'] },
+    },
+    blockExplorers: {
+        default: { name: 'BOB Explorer', url: 'https://explorer.gobob.xyz' },
+    },
+});
+
+export const bobTestnet = defineChain({
+    id: 111,
+    name: 'BOB Testnet',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['https://testnet.rpc.gobob.xyz'] },
+    },
+    blockExplorers: {
+        default: { name: 'BOB Testnet Explorer', url: 'https://testnet-explorer.gobob.xyz' },
+    },
+    testnet: true,
+});
+
+// ============ Merlin Chain (Bitcoin L2) ============
+
+export const merlin = defineChain({
+    id: 4200,
+    name: 'Merlin Chain',
+    nativeCurrency: { name: 'Bitcoin', symbol: 'BTC', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['https://rpc.merlinchain.io'] },
+    },
+    blockExplorers: {
+        default: { name: 'Merlin Explorer', url: 'https://scan.merlinchain.io' },
+    },
+});
+
+export const merlinTestnet = defineChain({
+    id: 686868,
+    name: 'Merlin Testnet',
+    nativeCurrency: { name: 'Bitcoin', symbol: 'BTC', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['https://testnet-rpc.merlinchain.io'] },
+    },
+    blockExplorers: {
+        default: { name: 'Merlin Testnet Explorer', url: 'https://testnet-scan.merlinchain.io' },
+    },
+    testnet: true,
+});
+
+// ============ Bitlayer (Bitcoin L2) ============
+
+export const bitlayer = defineChain({
+    id: 200901,
+    name: 'Bitlayer',
+    nativeCurrency: { name: 'Bitcoin', symbol: 'BTC', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['https://rpc.bitlayer.org'] },
+    },
+    blockExplorers: {
+        default: { name: 'Bitlayer Explorer', url: 'https://www.btrscan.com' },
+    },
+});
+
+export const bitlayerTestnet = defineChain({
+    id: 200810,
+    name: 'Bitlayer Testnet',
+    nativeCurrency: { name: 'Bitcoin', symbol: 'BTC', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['https://testnet-rpc.bitlayer.org'] },
+    },
+    blockExplorers: {
+        default: { name: 'Bitlayer Testnet Explorer', url: 'https://testnet.btrscan.com' },
+    },
+    testnet: true,
+});
+
+// ============ Core (Bitcoin-powered) ============
+
+export const core = defineChain({
+    id: 1116,
+    name: 'Core',
+    nativeCurrency: { name: 'CORE', symbol: 'CORE', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['https://rpc.coredao.org'] },
+    },
+    blockExplorers: {
+        default: { name: 'Core Explorer', url: 'https://scan.coredao.org' },
+    },
+});
+
+export const coreTestnet = defineChain({
+    id: 1115,
+    name: 'Core Testnet',
+    nativeCurrency: { name: 'tCORE', symbol: 'tCORE', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['https://rpc.test.btcs.network'] },
+    },
+    blockExplorers: {
+        default: { name: 'Core Testnet Explorer', url: 'https://scan.test.btcs.network' },
+    },
+    testnet: true,
+});
 
 // ============ Chain Categories ============
 
@@ -79,4 +233,36 @@ export const supportedChains: ChainInfo[] = [
 // Helper functions
 export const getChainById = (id: number | string): ChainInfo | undefined => {
     return supportedChains.find(chain => chain.id === id);
+};
+
+export const getChainsByCategory = (category: ChainCategory): ChainInfo[] => {
+    return supportedChains.filter(chain => chain.category === category);
+};
+
+export const getMainnets = (): ChainInfo[] => {
+    return supportedChains.filter(chain => !chain.isTestnet);
+};
+
+export const getTestnets = (): ChainInfo[] => {
+    return supportedChains.filter(chain => chain.isTestnet);
+};
+
+export const getEVMChains = (): ChainInfo[] => {
+    return supportedChains.filter(chain => chain.category === 'evm' || chain.category === 'bitcoin' || chain.category === 'hub');
+};
+
+export const getBitcoinChains = (): ChainInfo[] => {
+    return supportedChains.filter(chain => chain.category === 'bitcoin');
+};
+
+export const getSolanaChains = (): ChainInfo[] => {
+    return supportedChains.filter(chain => chain.category === 'solana');
+};
+
+export const getChainsByNetworkMode = (isTestnet: boolean): ChainInfo[] => {
+    return supportedChains.filter(chain => chain.isTestnet === isTestnet);
+};
+
+export const getChainsByCategoryAndMode = (category: ChainCategory, isTestnet: boolean): ChainInfo[] => {
+    return supportedChains.filter(chain => chain.category === category && chain.isTestnet === isTestnet);
 };

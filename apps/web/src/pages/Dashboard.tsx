@@ -4,6 +4,7 @@ import { useAccount, useBalance, useChainId } from 'wagmi';
 import { formatEther } from 'viem';
 import {
     Shield,
+    ArrowRightLeft,
     Send,
     Globe,
     TrendingUp,
@@ -11,18 +12,21 @@ import {
     Eye,
     EyeOff,
     Lock,
+    ArrowUpRight,
     ArrowDownLeft,
     Wallet,
     ChevronRight,
     Zap,
     CheckCircle2,
+    AlertCircle,
     RefreshCw,
     TestTube,
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
 import { useNetworkMode } from '../hooks/useNetworkMode';
 import { WalletModal } from '../components/WalletModal';
-import { supportedChains, getChainById } from '../config/chains';
+import { supportedChains, getChainById, type ChainInfo } from '../config/chains';
+import { cashSubnet, cashSubnetTestnet } from '../config/wagmi';
 
 export default function Dashboard() {
     const { isConnected, address } = useAccount();
@@ -32,8 +36,11 @@ export default function Dashboard() {
         shieldedBalance,
         notes,
         transactions,
+        chainBalances,
+        isInitialized,
         isLoading,
         refreshData,
+        getSupportedChains
     } = useSDK();
 
     const [hideBalances, setHideBalances] = useState(false);

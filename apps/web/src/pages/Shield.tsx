@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount, useBalance } from 'wagmi';
+import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -11,6 +11,7 @@ import {
     CheckCircle2,
     AlertCircle,
     Copy,
+    ExternalLink,
     Wallet,
     Download,
 } from 'lucide-react';
@@ -56,7 +57,9 @@ export default function Shield() {
         }
     }, [activeTab, address, recipient]);
 
-
+    const handleMaxClick = () => {
+        setAmount(maxAmount);
+    };
 
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);

@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { keccak256, encodePacked, toHex, encodeFunctionData, parseAbi } from 'viem';
 import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi';
 import { supportedChains, type ChainInfo, getChainById } from '../config/chains';
-import { cashSubnet } from '../config/wagmi';
+import { cashSubnet, cashSubnetTestnet } from '../config/wagmi';
 import { useNetworkMode } from './useNetworkMode';
 
 // Types
@@ -153,15 +153,13 @@ function getHubChainConfig(isTestnet: boolean) {
 }
 
 // Transaction types for hub recording
-const HubTxType = {
-    SHIELD: 0,
-    UNSHIELD: 1,
-    TRANSFER: 2,
-    BRIDGE: 3,
-    NOTE_IMPORT: 4,
-} as const;
-
-type HubTxType = typeof HubTxType[keyof typeof HubTxType];
+enum HubTxType {
+    SHIELD = 0,
+    UNSHIELD = 1,
+    TRANSFER = 2,
+    BRIDGE = 3,
+    NOTE_IMPORT = 4,
+}
 
 // Helper function to create a hub client for recording transactions
 async function createHubClient(isTestnet: boolean) {
@@ -231,7 +229,7 @@ async function recordTransactionOnHub(
             hubAddress: hubConfig.registryAddress
         });
 
-        await createHubClient(isTestnet);
+        const hubClient = await createHubClient(isTestnet);
 
         console.log('✅ Hub recording transaction:', {
             txHash,
@@ -246,7 +244,7 @@ async function recordTransactionOnHub(
 
         // UNCOMMENTED: Now calling the actual TransactionRegistry contract
         try {
-            encodeFunctionData({
+            const data = encodeFunctionData({
                 abi: parseAbi([
                     'function recordTransaction(bytes32 _txHash, uint256 _chainId, uint8 _txType, address _user, uint256 _amount, bytes32 _commitment, uint256 _blockNumber, bytes32 _noteHash, bool _isPrivate) external'
                 ]),

@@ -13,7 +13,7 @@ import {
     LogOut,
     Search,
 } from 'lucide-react';
-import { supportedChains, getChainById } from '../config/chains';
+import { supportedChains, type ChainInfo, getChainById } from '../config/chains';
 import { cashSubnet } from '../config/wagmi';
 
 interface WalletModalProps {

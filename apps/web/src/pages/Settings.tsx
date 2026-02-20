@@ -17,7 +17,9 @@ import {
     Lock,
     Download,
     Upload,
+    Trash2,
     CheckCircle2,
+    AlertCircle,
 } from 'lucide-react';
 import { useSDK } from '../hooks/useSDK';
 import { useTheme } from '../hooks/useTheme';
@@ -33,6 +35,7 @@ export default function Settings() {
     const { isDark, toggleTheme } = useTheme();
 
     const [copied, setCopied] = useState(false);
+    const [showRecovery, setShowRecovery] = useState(false);
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
     const [notifications, setNotifications] = useState(true);
     const [importText, setImportText] = useState('');
@@ -133,7 +136,9 @@ export default function Settings() {
         return networks[id] || `Chain ${id}`;
     };
 
-
+    const truncateAddress = (addr: string) => {
+        return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    };
 
     // Not connected state
     if (!isConnected) {

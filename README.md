@@ -1,7 +1,5 @@
 # Cash.io - Multi-Chain ZK-Privacy dApp
 
-**Demo Website**: [https://cash-io-protocol.vercel.app/](https://cash-io-protocol.vercel.app/)
-
 > [!IMPORTANT]
 > **Active Integration Phase**: Cash.io is currently in its frontend integration phase. Some features, particularly those involving cross-chain bridging and real-time proof generation, may be experimental or non-functional in the current build as we synchronize our agents, relayers, and frontend components.
 
